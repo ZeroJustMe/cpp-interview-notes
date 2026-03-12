@@ -14,7 +14,7 @@
 
 ---
 
-## 当前设计原则
+## 设计原则
 
 ### 1. 不只写关键词，要写清逻辑
 每个知识点尽量覆盖：
@@ -24,15 +24,21 @@
 - 易错点 / 边界条件
 - 工程上的真实意义
 
-### 2. 不局限于单一来源
-内容不局限于知乎整理，而是结合常见面试体系、工程经验、计算机基础知识框架，以及公开资料思路做二次重写。
-
-### 3. 重点不是“背答案”，而是“经得住追问”
-因此文档会刻意补充：
+### 2. 不只讲结论，也讲代价
+这套仓库的目标不是“背诵答案”，而是形成更像真实面试回答的结构：
+- 机制是什么
 - 为什么这样设计
-- 代价是什么
+- 解决了什么问题
+- 带来了什么代价
 - 什么时候这个结论不成立
-- 项目里如何落地
+
+### 3. 章节之间尽量能串起来
+比如：
+- C++ 并发 ↔ 操作系统调度 ↔ 锁与 IO 多路复用
+- TCP / HTTP ↔ RPC / MQ ↔ 缓存一致性 / 分布式系统
+- STL 容器 ↔ 内存布局 ↔ 工程性能取舍
+
+目标不是做“孤立知识点合集”，而是做一套能互相联通的复习体系。
 
 ---
 
@@ -48,16 +54,59 @@
 
 ---
 
-## 当前状态说明
+## 当前进度
 
-目前仓库已经从“提纲版”进入“深挖版”重写阶段：
-- 部分核心章节已开始按更深的问答方式重构
-- 后续会继续补全更多专题的深度内容
-- 目标是逐步把每一篇都提升到更像“高质量面试题库解析”而不是“备忘录”
+### 已进入深挖版重写的章节
+
+#### 03_computer_network
+- `01_tcp_udp_http.md`
+- `02_http_details.md`
+- `03_rpc_message_queue_dns_cdn.md`
+
+#### 04_database_cache
+- `01_mysql_redis.md`
+- `02_mysql_transactions_indexes.md`
+- `03_redis_high_availability.md`
+
+这些章节已经开始统一成下面这种风格：
+- 不只列结论
+- 会补为什么这样设计
+- 会写工程代价和边界条件
+- 会给一条典型追问链
+- 最后给更像现场回答的总结
+
+### 仍待继续升级的章节
+
+#### 01_cpp_language
+- `01_object_model.md`
+- `02_value_categories_move_smartptr.md`
+- `03_stl_template_compile.md`
+- `04_cpp_concurrency.md`
+- `05_stl_containers_deep_dive.md`
+- `06_cpp11_20_features.md`
+- `07_memory_management_allocator.md`
+- `08_templates_metaprogramming.md`
+
+#### 02_operating_system
+- `01_process_thread_memory.md`
+- `02_io_multiplexing.md`
+- `03_linux_filesystem_signals.md`
+
+#### 05_design_patterns_architecture
+- `01_patterns_architecture.md`
+- `02_project_questions.md`
+- `03_hands_on_topics.md`
+
+#### 06_algorithms
+- `01_data_structure_algorithm.md`
+
+#### 07_role_based
+- `01_backend_cpp_path.md`
+- `02_campus_cpp_path.md`
 
 ---
 
-## 阅读建议
+## 推荐阅读顺序
 
 ### 如果你准备校招
 建议顺序：
@@ -75,18 +124,47 @@
 4. `04_database_cache`
 5. `05_design_patterns_architecture`
 
+### 如果你时间很紧，只想优先补高频追问区
+建议先看：
+1. `01_cpp_language/02_value_categories_move_smartptr.md`
+2. `01_cpp_language/04_cpp_concurrency.md`
+3. `03_computer_network/01_tcp_udp_http.md`
+4. `03_computer_network/02_http_details.md`
+5. `04_database_cache/01_mysql_redis.md`
+6. `05_design_patterns_architecture/02_project_questions.md`
+
 ---
 
-## 后续计划
+## 统一写作模板（后续章节按这个标准推进）
 
-后续会继续系统化加强这些方向：
-- STL 各容器逐个深挖
-- C++11/14/17/20 新特性按专题展开
-- 手撕线程池 / shared_ptr / LRU / 生产者消费者
-- Linux 网络编程专题
-- MySQL 索引/事务/MVCC 深挖
-- Redis 高可用 / 大 key / 缓存一致性
-- 分布式常问问题：幂等、限流、熔断、降级、消息可靠性
-- 项目题回答模板与高频追问
+后续重写会尽量统一成下面结构：
+1. 这一章为什么重要
+2. 高频问题清单
+3. 标准回答
+4. 更深入的理解
+5. 常见误区 / 边界条件
+6. 一组典型追问链
+7. 更像面试现场的总结回答
+8. 复习建议
 
-如果你把这个仓库长期打磨下去，它会更像一个真正能用来刷面试的 C++ 知识库，而不是一次性的八股摘要。
+这样做的目标是：
+- 方便突击复习
+- 方便按专题系统补强
+- 让每篇都更像“面试解析”，而不是“零散备忘录”
+
+---
+
+## 后续推进路线
+
+接下来会继续按同样深度往下推进：
+- `04_database_cache/02_mysql_transactions_indexes.md`
+- `04_database_cache/03_redis_high_availability.md`
+- `02_operating_system/*`
+- `05_design_patterns_architecture/*`
+- `01_cpp_language/*`
+- `06_algorithms/*`
+- `07_role_based/*`
+
+目标不是只把目录补满，而是把**每一章都写成能经得住继续追问的材料**。
+
+如果这个仓库能持续打磨下去，它会越来越像一套真正可用于面试准备和查漏补缺的 C++ / 后端知识库，而不只是一次性的八股摘要。
