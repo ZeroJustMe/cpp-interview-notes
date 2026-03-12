@@ -88,6 +88,13 @@
 - `07_memory_management_allocator.md`
 - `08_templates_metaprogramming.md`
 
+#### 06_algorithms
+- `01_data_structure_algorithm.md`
+
+#### 07_role_based
+- `01_backend_cpp_path.md`
+- `02_campus_cpp_path.md`
+
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
 - 会补为什么这样设计
@@ -97,12 +104,7 @@
 
 ### 仍待继续升级的章节
 
-#### 06_algorithms
-- `01_data_structure_algorithm.md`
-
-#### 07_role_based
-- `01_backend_cpp_path.md`
-- `02_campus_cpp_path.md`
+目前目录中的核心章节均已完成首轮深挖版重写。
 
 ---
 
@@ -156,9 +158,10 @@
 
 ## 后续推进路线
 
-接下来会继续按同样深度往下推进：
-- `06_algorithms/*`
-- `07_role_based/*`
+接下来会继续按同样深度做第二轮打磨与补强：
+- 补更多跨章节索引与串联阅读路径
+- 对重点章节继续补项目化追问和例题
+- 逐步把每篇从“深挖版”继续抬到“可直接冲面”的强度
 
 目标不是只把目录补满，而是把**每一章都写成能经得住继续追问的材料**。
 
