@@ -78,6 +78,12 @@
 - `02_project_questions.md`
 - `03_hands_on_topics.md`
 
+#### 01_cpp_language
+- `01_object_model.md`
+- `02_value_categories_move_smartptr.md`
+- `03_stl_template_compile.md`
+- `04_cpp_concurrency.md`
+
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
 - 会补为什么这样设计
@@ -88,19 +94,10 @@
 ### 仍待继续升级的章节
 
 #### 01_cpp_language
-- `01_object_model.md`
-- `02_value_categories_move_smartptr.md`
-- `03_stl_template_compile.md`
-- `04_cpp_concurrency.md`
 - `05_stl_containers_deep_dive.md`
 - `06_cpp11_20_features.md`
 - `07_memory_management_allocator.md`
 - `08_templates_metaprogramming.md`
-
-#### 05_design_patterns_architecture
-- `01_patterns_architecture.md`
-- `02_project_questions.md`
-- `03_hands_on_topics.md`
 
 #### 06_algorithms
 - `01_data_structure_algorithm.md`
@@ -162,8 +159,10 @@
 ## 后续推进路线
 
 接下来会继续按同样深度往下推进：
-- `05_design_patterns_architecture/*`
-- `01_cpp_language/*`
+- `01_cpp_language/05_stl_containers_deep_dive.md`
+- `01_cpp_language/06_cpp11_20_features.md`
+- `01_cpp_language/07_memory_management_allocator.md`
+- `01_cpp_language/08_templates_metaprogramming.md`
 - `06_algorithms/*`
 - `07_role_based/*`
 
