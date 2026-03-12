@@ -73,6 +73,11 @@
 - `02_io_multiplexing.md`
 - `03_linux_filesystem_signals.md`
 
+#### 05_design_patterns_architecture
+- `01_patterns_architecture.md`
+- `02_project_questions.md`
+- `03_hands_on_topics.md`
+
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
 - 会补为什么这样设计
@@ -81,11 +86,6 @@
 - 最后给更像现场回答的总结
 
 ### 仍待继续升级的章节
-
-#### 02_operating_system
-- `01_process_thread_memory.md`
-- `02_io_multiplexing.md`
-- `03_linux_filesystem_signals.md`
 
 #### 01_cpp_language
 - `01_object_model.md`
