@@ -68,6 +68,11 @@
 - `02_mysql_transactions_indexes.md`
 - `03_redis_high_availability.md`
 
+#### 02_operating_system
+- `01_process_thread_memory.md`
+- `02_io_multiplexing.md`
+- `03_linux_filesystem_signals.md`
+
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
 - 会补为什么这样设计
@@ -76,6 +81,11 @@
 - 最后给更像现场回答的总结
 
 ### 仍待继续升级的章节
+
+#### 02_operating_system
+- `01_process_thread_memory.md`
+- `02_io_multiplexing.md`
+- `03_linux_filesystem_signals.md`
 
 #### 01_cpp_language
 - `01_object_model.md`
@@ -86,11 +96,6 @@
 - `06_cpp11_20_features.md`
 - `07_memory_management_allocator.md`
 - `08_templates_metaprogramming.md`
-
-#### 02_operating_system
-- `01_process_thread_memory.md`
-- `02_io_multiplexing.md`
-- `03_linux_filesystem_signals.md`
 
 #### 05_design_patterns_architecture
 - `01_patterns_architecture.md`
@@ -157,9 +162,6 @@
 ## 后续推进路线
 
 接下来会继续按同样深度往下推进：
-- `04_database_cache/02_mysql_transactions_indexes.md`
-- `04_database_cache/03_redis_high_availability.md`
-- `02_operating_system/*`
 - `05_design_patterns_architecture/*`
 - `01_cpp_language/*`
 - `06_algorithms/*`
