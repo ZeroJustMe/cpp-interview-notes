@@ -62,6 +62,7 @@
 - `01_tcp_udp_http.md`
 - `02_http_details.md`
 - `03_rpc_message_queue_dns_cdn.md`
+- `04_network_security_basics.md`
 
 #### 04_database_cache
 - `01_mysql_redis.md`
@@ -79,6 +80,7 @@
 - `02_project_questions.md`
 - `03_hands_on_topics.md`
 - `04_distributed_systems_load_balancing_high_availability.md`
+- `05_observability_reliability_cloud_native.md`
 
 #### 01_cpp_language
 - `01_object_model.md`
