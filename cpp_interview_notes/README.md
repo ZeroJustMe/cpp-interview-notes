@@ -94,6 +94,7 @@
 #### 07_role_based
 - `01_backend_cpp_path.md`
 - `02_campus_cpp_path.md`
+- `03_job_requirements_gap_supplement.md`
 
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
