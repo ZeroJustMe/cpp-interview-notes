@@ -67,6 +67,7 @@
 - `01_mysql_redis.md`
 - `02_mysql_transactions_indexes.md`
 - `03_redis_high_availability.md`
+- `04_nosql_kv_storage_principles.md`
 
 #### 02_operating_system
 - `01_process_thread_memory.md`
@@ -77,6 +78,7 @@
 - `01_patterns_architecture.md`
 - `02_project_questions.md`
 - `03_hands_on_topics.md`
+- `04_distributed_systems_load_balancing_high_availability.md`
 
 #### 01_cpp_language
 - `01_object_model.md`
@@ -95,6 +97,7 @@
 - `01_backend_cpp_path.md`
 - `02_campus_cpp_path.md`
 - `03_job_requirements_gap_supplement.md`
+- `04_job_requirements_interview_quick_notes.md`
 
 这些章节已经开始统一成下面这种风格：
 - 不只列结论
