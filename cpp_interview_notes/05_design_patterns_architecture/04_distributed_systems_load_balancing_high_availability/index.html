@@ -1,0 +1,5544 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="面向 C++/后端/系统方向的面试准备知识库">
+      
+      
+      
+        <link rel="canonical" href="https://zerojustme.github.io/cpp-interview-notes/cpp_interview_notes/05_design_patterns_architecture/04_distributed_systems_load_balancing_high_availability/">
+      
+      
+        <link rel="prev" href="../03_hands_on_topics/">
+      
+      
+        <link rel="next" href="../05_observability_reliability_cloud_native/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>分布式 · 负载均衡 · 高可用 - C++ 面试笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans+SC:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Noto Sans SC";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#04" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../../.." title="C++ 面试笔记" class="md-header__button md-logo" aria-label="C++ 面试笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            C++ 面试笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              分布式 · 负载均衡 · 高可用
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ZeroJustMe/cpp-interview-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ZeroJustMe/cpp-interview-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++ 语言
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../02_operating_system/01_process_thread_memory/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  操作系统
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../03_computer_network/00_network_fundamentals/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  计算机网络
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../04_database_cache/00_sql_fundamentals/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  数据库与缓存
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../01_patterns_architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  设计模式与架构
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../06_algorithms/01_data_structure_algorithm/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  算法
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../07_role_based/01_backend_cpp_path/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  岗位路径
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../08_enterprise_scenarios/01_scenario_questions/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  企业场景
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../cpp_company_interviews/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  公司面经
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="C++ 面试笔记" class="md-nav__button md-logo" aria-label="C++ 面试笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    C++ 面试笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ZeroJustMe/cpp-interview-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ZeroJustMe/cpp-interview-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++ 语言
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C++ 语言
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/01_object_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    对象模型与内存布局
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/02_value_categories_move_smartptr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    值类别 · 移动语义 · 智能指针
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/03_stl_template_compile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL · 模板 · 编译链接
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/04_cpp_concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    并发编程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/05_stl_containers_deep_dive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL 容器深入
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/06_cpp11_20_features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++11-20 新特性
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/07_memory_management_allocator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    内存管理与 Allocator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_cpp_language/08_templates_metaprogramming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模板元编程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    操作系统
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    操作系统
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_operating_system/01_process_thread_memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    进程 · 线程 · 内存
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_operating_system/02_io_multiplexing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO 多路复用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_operating_system/03_linux_filesystem_signals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    文件系统与信号
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    计算机网络
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    计算机网络
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_computer_network/00_network_fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    网络基础
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_computer_network/01_tcp_udp_http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCP · UDP · HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_computer_network/02_http_details/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP 详解
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_computer_network/03_rpc_message_queue_dns_cdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RPC · 消息队列 · DNS · CDN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_computer_network/04_network_security_basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    网络安全基础
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    数据库与缓存
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    数据库与缓存
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_database_cache/00_sql_fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL 基础
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_database_cache/01_mysql_redis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MySQL & Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_database_cache/02_mysql_transactions_indexes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    事务 · 锁 · 索引
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_database_cache/03_redis_high_availability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis 高可用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_database_cache/04_nosql_kv_storage_principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NoSQL 与 KV 存储
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    设计模式与架构
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    设计模式与架构
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_patterns_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    设计模式 · 系统设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_project_questions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    项目问答
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_hands_on_topics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    手撕题
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分布式 · 负载均衡 · 高可用
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分布式 · 负载均衡 · 高可用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 什么是分布式系统？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 什么是分布式系统？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更深入的理解
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这题高频？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 分布式系统相比单机系统，最核心的代价是什么？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 分布式系统相比单机系统，最核心的代价是什么？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更深入地讲
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        典型面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 什么是服务发现？为什么分布式系统需要它？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 什么是服务发现？为什么分布式系统需要它？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不能把 IP 写死？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见实现方式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 什么是负载均衡？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 什么是负载均衡？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么需要负载均衡？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 常见负载均衡策略有哪些？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 常见负载均衡策略有哪些？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1）轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2）加权轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3）最少连接
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4）一致性哈希
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5）基于延迟 / 健康状态的动态调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 四层负载均衡和七层负载均衡有什么区别？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 四层负载均衡和七层负载均衡有什么区别？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四层负载均衡
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七层负载均衡
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 什么是高可用？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 什么是高可用？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它真正回答的是什么问题？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见高可用手段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 高可用为什么不等于高一致性？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 高可用为什么不等于高一致性？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这两个目标会冲突？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个非常典型的例子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 什么是主从复制？它解决了什么问题？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 什么是主从复制？它解决了什么问题？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它解决的主要问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它的代价
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-failover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 什么是故障转移（Failover）？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 什么是故障转移（Failover）？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        核心步骤
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么故障转移很难？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-split-brain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 什么是脑裂（Split Brain）？为什么危险？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. 什么是脑裂（Split Brain）？为什么危险？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么危险？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见应对思路
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 什么是 CAP？怎么答更稳？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 什么是 CAP？怎么答更稳？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见误区
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更稳的回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        关键点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 什么是最终一致性？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. 什么是最终一致性？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么很多业务能接受它？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        但别答得太轻松
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 为什么重试会把系统问题放大？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. 为什么重试会把系统问题放大？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_56" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_57" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个典型链路
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_58" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        所以重试必须带约束
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_59" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 为什么要做限流、熔断、降级和隔离？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="15. 为什么要做限流、熔断、降级和隔离？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_60" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        限流
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        熔断
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        降级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        隔离
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么它们常被放在一起讲？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_65" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. 什么是容灾？它和高可用有什么区别？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="16. 什么是容灾？它和高可用有什么区别？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_66" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_67" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        两者关注范围不同
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_68" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见容灾等级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_69" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-rpo-rto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. RPO 和 RTO 是什么？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. RPO 和 RTO 是什么？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rporecovery-point-objective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RPO（Recovery Point Objective）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rtorecovery-time-objective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTO（Recovery Time Objective）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_70" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这两个指标重要？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. 双活为什么难？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="18. 双活为什么难？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不是“部署两套”就行？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. 分布式系统如何回答“设计一个高可用架构”？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. 分布式系统如何回答“设计一个高可用架构”？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_75" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个稳的答题框架
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_76" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这个框架好用？
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. 一组典型追问链
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        21. 一份更像面试现场的总结回答
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22. 复习建议
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_observability_reliability_cloud_native/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    可观测性 · 云原生
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    算法
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    算法
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_algorithms/01_data_structure_algorithm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    数据结构与算法
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    岗位路径
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    岗位路径
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_role_based/01_backend_cpp_path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    后端 C++ 路径
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_role_based/02_campus_cpp_path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    校招 C++ 路径
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_role_based/03_job_requirements_gap_supplement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    岗位要求差距补充
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_role_based/04_job_requirements_interview_quick_notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    面试速记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    企业场景
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    企业场景
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../08_enterprise_scenarios/01_scenario_questions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    场景面试题
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../cpp_company_interviews/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    公司面经
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    公司面经
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/%E9%AB%98%E9%A2%91%E7%9F%A5%E8%AF%86%E7%82%B9/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    高频知识点
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/%E7%AE%97%E6%B3%95%E9%A2%98%E6%98%A0%E5%B0%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    算法题映射
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来源清单
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E8%85%BE%E8%AE%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    腾讯
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E9%98%BF%E9%87%8C-%E9%92%89%E9%92%89/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    阿里 / 钉钉
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    字节跳动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E7%99%BE%E5%BA%A6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    百度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E7%BE%8E%E5%9B%A2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    美团
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E4%BA%AC%E4%B8%9C/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    京东
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E5%8D%8E%E4%B8%BA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    华为
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp_company_interviews/companies/%E5%B0%8F%E7%B1%B3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    小米
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 什么是分布式系统？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 什么是分布式系统？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更深入的理解
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这题高频？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 分布式系统相比单机系统，最核心的代价是什么？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 分布式系统相比单机系统，最核心的代价是什么？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更深入地讲
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        典型面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 什么是服务发现？为什么分布式系统需要它？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 什么是服务发现？为什么分布式系统需要它？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不能把 IP 写死？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见实现方式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 什么是负载均衡？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 什么是负载均衡？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么需要负载均衡？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 常见负载均衡策略有哪些？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 常见负载均衡策略有哪些？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1）轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2）加权轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3）最少连接
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4）一致性哈希
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5）基于延迟 / 健康状态的动态调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 四层负载均衡和七层负载均衡有什么区别？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 四层负载均衡和七层负载均衡有什么区别？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四层负载均衡
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七层负载均衡
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 什么是高可用？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 什么是高可用？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它真正回答的是什么问题？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见高可用手段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 高可用为什么不等于高一致性？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 高可用为什么不等于高一致性？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这两个目标会冲突？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个非常典型的例子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 什么是主从复制？它解决了什么问题？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 什么是主从复制？它解决了什么问题？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它解决的主要问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        它的代价
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-failover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 什么是故障转移（Failover）？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 什么是故障转移（Failover）？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        核心步骤
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么故障转移很难？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-split-brain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 什么是脑裂（Split Brain）？为什么危险？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. 什么是脑裂（Split Brain）？为什么危险？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么危险？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见应对思路
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 什么是 CAP？怎么答更稳？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 什么是 CAP？怎么答更稳？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见误区
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        更稳的回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        关键点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 什么是最终一致性？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. 什么是最终一致性？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么很多业务能接受它？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        但别答得太轻松
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 为什么重试会把系统问题放大？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. 为什么重试会把系统问题放大？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_56" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_57" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个典型链路
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_58" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        所以重试必须带约束
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_59" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 为什么要做限流、熔断、降级和隔离？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="15. 为什么要做限流、熔断、降级和隔离？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_60" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        限流
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        熔断
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        降级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        隔离
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么它们常被放在一起讲？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_65" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. 什么是容灾？它和高可用有什么区别？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="16. 什么是容灾？它和高可用有什么区别？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_66" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_67" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        两者关注范围不同
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_68" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见容灾等级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_69" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句总结
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-rpo-rto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. RPO 和 RTO 是什么？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. RPO 和 RTO 是什么？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rporecovery-point-objective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RPO（Recovery Point Objective）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rtorecovery-time-objective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTO（Recovery Time Objective）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_70" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这两个指标重要？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. 双活为什么难？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="18. 双活为什么难？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准回答
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不是“部署两套”就行？
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        高分点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. 分布式系统如何回答“设计一个高可用架构”？
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. 分布式系统如何回答“设计一个高可用架构”？">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_75" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一个稳的答题框架
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_76" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么这个框架好用？
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. 一组典型追问链
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        21. 一份更像面试现场的总结回答
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22. 复习建议
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="04">04. 分布式系统、负载均衡、高可用与容灾（深挖版）<a class="headerlink" href="#04" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>这一章是很多后端 / 基础设施 / 核心服务岗位最容易拉开差距的部分。</p>
+<p>因为面试官问到这里时，通常已经不满足于：</p>
+<ul>
+<li>会说微服务</li>
+<li>会说限流、熔断、降级</li>
+<li>会说主从、集群、扩容</li>
+</ul>
+<p>他们更想知道你是否真的理解：</p>
+<ul>
+<li>分布式系统和单机系统到底差在哪</li>
+<li>负载均衡不仅仅是“轮询分发”</li>
+<li>高可用为什么不等于高一致性</li>
+<li>容灾为什么不是“多部署几份”那么简单</li>
+<li>为什么很多机制本来是为了解决问题，最后却引入新的复杂性</li>
+</ul>
+<p>这一章的目标，就是把这些概念从“会背术语”推进到“能接住追问”。</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 什么是分布式系统？<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="_1">标准回答<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<p>分布式系统是由多个通过网络协作的节点，共同对外提供统一服务能力的系统。</p>
+<h3 id="_2">更深入的理解<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>单机系统和分布式系统表面区别是“机器数量变多了”，但真正本质上的区别不是节点数，而是：</p>
+<ul>
+<li>计算和数据分散在不同节点上</li>
+<li>节点之间只能通过网络通信</li>
+<li>网络存在延迟、抖动、丢包和分区</li>
+<li>节点可能只部分失败，不是统一成功或统一失败</li>
+</ul>
+<p>所以分布式系统相比单机系统，多出来的核心难点不是“怎么把程序复制到多台机器上”，而是：</p>
+<ul>
+<li><strong>远程调用代价</strong></li>
+<li><strong>部分失败处理</strong></li>
+<li><strong>数据复制与一致性</strong></li>
+<li><strong>容量扩展</strong></li>
+<li><strong>故障定位和恢复</strong></li>
+</ul>
+<h3 id="_3">为什么这题高频？<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>因为很多候选人把分布式系统回答成“微服务拆分”。
+但微服务只是组织形式，分布式系统真正难的是：</p>
+<blockquote>
+<p>你把系统拆开以后，之前单机内部那些本来靠函数调用、共享内存、单机事务解决的问题，现在都变成了网络问题、一致性问题、运维问题。</p>
+</blockquote>
+<h3 id="_4">一句总结<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>分布式系统最核心的变化，不是节点变多，而是系统开始必须面对网络不可靠、节点会部分失败、数据要跨节点协同这三类问题。</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 分布式系统相比单机系统，最核心的代价是什么？<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="_5">标准回答<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>分布式系统带来的主要代价包括：</p>
+<ul>
+<li>网络通信成本</li>
+<li>一致性复杂度</li>
+<li>调试与运维复杂度提升</li>
+<li>故障模型更复杂</li>
+</ul>
+<h3 id="_6">更深入地讲<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>单机程序里一个函数调用通常意味着：</p>
+<ul>
+<li>延迟极低</li>
+<li>基本不会因为网络失败而中断</li>
+<li>状态共享简单</li>
+</ul>
+<p>分布式系统里一次服务调用可能涉及：</p>
+<ul>
+<li>序列化 / 反序列化</li>
+<li>网络传输</li>
+<li>连接池与超时</li>
+<li>重试和幂等</li>
+<li>负载均衡与服务发现</li>
+<li>下游实例过载或局部异常</li>
+</ul>
+<p>也就是说：</p>
+<blockquote>
+<p>分布式系统把原来很多“几乎可以忽略”的本地成本，变成了不能忽略的系统级成本。</p>
+</blockquote>
+<h3 id="_7">典型面试高分点<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>分布式系统最大的代价不是代码量变多，而是所有“本地默认成立”的前提都不再天然成立：调用不再稳定、状态不再集中、事务不再天然闭环。</p>
+</blockquote>
+<hr />
+<h2 id="3">3. 什么是服务发现？为什么分布式系统需要它？<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="_8">标准回答<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>服务发现是让调用方能够动态找到可用服务实例地址的机制。</p>
+<h3 id="ip">为什么不能把 IP 写死？<a class="headerlink" href="#ip" title="Permanent link">&para;</a></h3>
+<p>因为现代服务系统里，实例通常会：</p>
+<ul>
+<li>扩缩容</li>
+<li>重启</li>
+<li>漂移到不同节点</li>
+<li>因故障下线</li>
+</ul>
+<p>如果调用方写死 IP：</p>
+<ul>
+<li>扩容不方便</li>
+<li>切换成本高</li>
+<li>容错很差</li>
+</ul>
+<h3 id="_9">常见实现方式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>注册中心：服务启动后注册自身地址</li>
+<li>调用方查询注册中心，或通过本地缓存拿到实例列表</li>
+<li>再结合负载均衡策略选实例</li>
+</ul>
+<h3 id="_10">高分点<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>服务发现的价值不只是“知道对方在哪”，而是让实例生命周期和调用方解耦，支持动态扩缩容和故障摘除。</p>
+</blockquote>
+<hr />
+<h2 id="4">4. 什么是负载均衡？<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<h3 id="_11">标准回答<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>负载均衡是把流量合理分发到多个后端实例上，以提升吞吐、降低单点压力并提高可用性。</p>
+<h3 id="_12">为什么需要负载均衡？<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p>如果所有请求都打到一个实例：</p>
+<ul>
+<li>它可能先成为瓶颈</li>
+<li>它挂了就直接不可用</li>
+<li>整个集群的资源利用率很差</li>
+</ul>
+<p>负载均衡的核心价值有三个：</p>
+<ol>
+<li><strong>分摊流量</strong></li>
+<li><strong>提升整体可用性</strong></li>
+<li><strong>支持扩容后平滑接流量</strong></li>
+</ol>
+<h3 id="_13">一句总结<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>负载均衡不只是让请求“平均分”，而是让系统容量、稳定性和实例生命周期管理变得可控。</p>
+</blockquote>
+<hr />
+<h2 id="5">5. 常见负载均衡策略有哪些？<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="1_1">1）轮询<a class="headerlink" href="#1_1" title="Permanent link">&para;</a></h3>
+<p>按顺序把请求依次分发到不同实例。</p>
+<h4 id="_14">优点<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h4>
+<ul>
+<li>简单</li>
+<li>实现成本低</li>
+</ul>
+<h4 id="_15">缺点<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h4>
+<ul>
+<li>不感知实例实际负载</li>
+<li>不适合实例性能差异大或请求开销差异大的场景</li>
+</ul>
+<h3 id="2_1">2）加权轮询<a class="headerlink" href="#2_1" title="Permanent link">&para;</a></h3>
+<p>按实例权重分配请求。</p>
+<h4 id="_16">适合场景<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h4>
+<ul>
+<li>机器规格不同</li>
+<li>新老集群灰度放量</li>
+</ul>
+<h3 id="3_1">3）最少连接<a class="headerlink" href="#3_1" title="Permanent link">&para;</a></h3>
+<p>把新请求分给当前活跃连接数最少的实例。</p>
+<h4 id="_17">适合场景<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h4>
+<ul>
+<li>长连接或请求耗时差异较大的场景</li>
+</ul>
+<h3 id="4_1">4）一致性哈希<a class="headerlink" href="#4_1" title="Permanent link">&para;</a></h3>
+<p>根据 key（如用户 ID、会话 ID）把请求稳定映射到某些实例。</p>
+<h4 id="_18">适合场景<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h4>
+<ul>
+<li>缓存节点选择</li>
+<li>会话粘性</li>
+<li>分片路由</li>
+</ul>
+<h3 id="5_1">5）基于延迟 / 健康状态的动态调度<a class="headerlink" href="#5_1" title="Permanent link">&para;</a></h3>
+<p>不仅看静态权重，还看：</p>
+<ul>
+<li>RT</li>
+<li>错误率</li>
+<li>健康状态</li>
+<li>实时负载</li>
+</ul>
+<h4 id="_19">适合场景<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h4>
+<ul>
+<li>复杂线上流量治理</li>
+<li>多机房、多实例质量差异明显的场景</li>
+</ul>
+<h3 id="_20">高分点<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>负载均衡算法不是越复杂越好，关键是请求模型、实例差异和目标是什么。轮询追求简单，一致性哈希追求稳定映射，最少连接更适合长耗时场景。</p>
+</blockquote>
+<hr />
+<h2 id="6">6. 四层负载均衡和七层负载均衡有什么区别？<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="_21">四层负载均衡<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
+<p>工作在传输层，通常根据：</p>
+<ul>
+<li>IP</li>
+<li>Port</li>
+<li>TCP / UDP 信息</li>
+</ul>
+<p>来转发流量。</p>
+<h4 id="_22">优点<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h4>
+<ul>
+<li>通用</li>
+<li>转发效率高</li>
+<li>协议无关</li>
+</ul>
+<h4 id="_23">缺点<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h4>
+<ul>
+<li>看不到应用层内容</li>
+<li>很难按 URL、Header 等业务语义做分发</li>
+</ul>
+<h3 id="_24">七层负载均衡<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h3>
+<p>工作在应用层，通常可以根据：</p>
+<ul>
+<li>Host</li>
+<li>URL Path</li>
+<li>Header</li>
+<li>Cookie</li>
+<li>Method</li>
+</ul>
+<p>等信息做路由和治理。</p>
+<h4 id="_25">优点<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h4>
+<ul>
+<li>路由更灵活</li>
+<li>支持更细粒度治理</li>
+<li>便于做灰度、鉴权、限流、缓存等策略</li>
+</ul>
+<h4 id="_26">缺点<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h4>
+<ul>
+<li>更复杂</li>
+<li>性能开销通常更高</li>
+<li>对协议有更强耦合</li>
+</ul>
+<h3 id="_27">面试高分点<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>四层更像“高效地把流量送过去”，七层更像“理解业务语义后再做转发和治理”。选型核心是性能诉求和路由灵活性的权衡。</p>
+</blockquote>
+<hr />
+<h2 id="7">7. 什么是高可用？<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<h3 id="_28">标准回答<a class="headerlink" href="#_28" title="Permanent link">&para;</a></h3>
+<p>高可用是指系统在部分节点、部分组件发生故障时，仍然能够持续提供服务的能力。</p>
+<h3 id="_29">它真正回答的是什么问题？<a class="headerlink" href="#_29" title="Permanent link">&para;</a></h3>
+<p>高可用不是问“系统会不会出故障”，而是问：</p>
+<ul>
+<li><strong>出故障时还能不能继续服务</strong></li>
+<li><strong>影响范围有多大</strong></li>
+<li><strong>恢复速度有多快</strong></li>
+</ul>
+<h3 id="_30">常见高可用手段<a class="headerlink" href="#_30" title="Permanent link">&para;</a></h3>
+<ul>
+<li>多实例冗余</li>
+<li>主从 / 多副本</li>
+<li>健康检查</li>
+<li>自动摘除故障节点</li>
+<li>故障转移</li>
+<li>限流、降级、隔离、熔断</li>
+</ul>
+<h3 id="_31">一句总结<a class="headerlink" href="#_31" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>高可用不是追求“不出故障”，而是追求“故障发生时不至于整体失效”。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 高可用为什么不等于高一致性？<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="_32">标准回答<a class="headerlink" href="#_32" title="Permanent link">&para;</a></h3>
+<p>高可用关注的是系统还能否继续对外服务；高一致性关注的是不同副本、不同节点在任意时刻是否保持一致的数据视图。</p>
+<h3 id="_33">为什么这两个目标会冲突？<a class="headerlink" href="#_33" title="Permanent link">&para;</a></h3>
+<p>为了提高可用性，系统通常会：</p>
+<ul>
+<li>做多副本</li>
+<li>做异步复制</li>
+<li>做自动切换</li>
+</ul>
+<p>但这些机制都会带来一致性窗口：</p>
+<ul>
+<li>主从复制延迟</li>
+<li>切主时未同步完成</li>
+<li>网络分区时不同节点视图不一致</li>
+</ul>
+<h3 id="_34">一个非常典型的例子<a class="headerlink" href="#_34" title="Permanent link">&para;</a></h3>
+<p>主库刚写入成功，但从库还没同步完成，这时：</p>
+<ul>
+<li>如果你优先保证可用性，让从库继续提供读服务</li>
+<li>那么它可能返回旧数据</li>
+</ul>
+<p>这说明：</p>
+<blockquote>
+<p>系统“能服务”不代表“数据在这个瞬间完全一致”。</p>
+</blockquote>
+<h3 id="_35">高分点<a class="headerlink" href="#_35" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>很多候选人会把“多副本”和“强一致”画等号，但真正成熟的说法应该是：多副本提升的是可用性基础，不自动等于强一致保证。</p>
+</blockquote>
+<hr />
+<h2 id="9">9. 什么是主从复制？它解决了什么问题？<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<h3 id="_36">标准回答<a class="headerlink" href="#_36" title="Permanent link">&para;</a></h3>
+<p>主从复制是指主节点负责处理写请求，并将数据变更同步给从节点，从节点通常承接读流量或作为故障恢复基础。</p>
+<h3 id="_37">它解决的主要问题<a class="headerlink" href="#_37" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>读扩展</strong>：从节点分担查询压力</li>
+<li><strong>容灾基础</strong>：主节点故障时可以切换</li>
+<li><strong>数据冗余</strong>：降低单点风险</li>
+</ol>
+<h3 id="_38">它的代价<a class="headerlink" href="#_38" title="Permanent link">&para;</a></h3>
+<ul>
+<li>复制延迟</li>
+<li>读写不一致窗口</li>
+<li>故障切换复杂</li>
+<li>主从角色管理和脑裂风险</li>
+</ul>
+<h3 id="_39">高分点<a class="headerlink" href="#_39" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>主从复制不是万能架构，它主要解决容量和可用性问题，但代价是你必须接受复制延迟和切换复杂度。</p>
+</blockquote>
+<hr />
+<h2 id="10-failover">10. 什么是故障转移（Failover）？<a class="headerlink" href="#10-failover" title="Permanent link">&para;</a></h2>
+<h3 id="_40">标准回答<a class="headerlink" href="#_40" title="Permanent link">&para;</a></h3>
+<p>故障转移是在主节点或关键组件故障后，把流量或角色切换到备用节点的机制。</p>
+<h3 id="_41">核心步骤<a class="headerlink" href="#_41" title="Permanent link">&para;</a></h3>
+<ol>
+<li>故障检测</li>
+<li>故障确认</li>
+<li>选择新的可用节点</li>
+<li>切换角色 / 切流量</li>
+<li>恢复服务</li>
+</ol>
+<h3 id="_42">为什么故障转移很难？<a class="headerlink" href="#_42" title="Permanent link">&para;</a></h3>
+<p>因为这不是简单“检测到挂了就切换”这么粗暴，还要处理：</p>
+<ul>
+<li>误判</li>
+<li>网络抖动</li>
+<li>双主风险</li>
+<li>切换期间流量丢失或请求失败</li>
+<li>数据是否追平</li>
+</ul>
+<h3 id="_43">面试高分点<a class="headerlink" href="#_43" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>故障转移最难的不是“切”，而是“怎么保证切得对、切得稳、切完后系统状态合理”。</p>
+</blockquote>
+<hr />
+<h2 id="11-split-brain">11. 什么是脑裂（Split Brain）？为什么危险？<a class="headerlink" href="#11-split-brain" title="Permanent link">&para;</a></h2>
+<h3 id="_44">标准回答<a class="headerlink" href="#_44" title="Permanent link">&para;</a></h3>
+<p>脑裂是指由于网络分区或错误判断，系统中多个节点都认为自己是主节点，导致出现多个“主”。</p>
+<h3 id="_45">为什么危险？<a class="headerlink" href="#_45" title="Permanent link">&para;</a></h3>
+<p>因为一旦多个主节点同时接收写入：</p>
+<ul>
+<li>数据会分叉</li>
+<li>后续合并很难</li>
+<li>一致性可能严重破坏</li>
+</ul>
+<h3 id="_46">常见应对思路<a class="headerlink" href="#_46" title="Permanent link">&para;</a></h3>
+<ul>
+<li>仲裁机制</li>
+<li>法定票数 / 多数派原则</li>
+<li>fencing token</li>
+<li>更严格的主节点切换规则</li>
+</ul>
+<h3 id="_47">高分点<a class="headerlink" href="#_47" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>脑裂的本质不是“角色混乱”这么简单，而是系统可能在故障期间接受了彼此不兼容的写入，这会直接把高可用问题升级成数据一致性灾难。</p>
+</blockquote>
+<hr />
+<h2 id="12-cap">12. 什么是 CAP？怎么答更稳？<a class="headerlink" href="#12-cap" title="Permanent link">&para;</a></h2>
+<h3 id="_48">常见误区<a class="headerlink" href="#_48" title="Permanent link">&para;</a></h3>
+<p>很多人喜欢把 CAP 背成口诀题，但面试里更重要的是你能不能说清场景。</p>
+<h3 id="_49">更稳的回答<a class="headerlink" href="#_49" title="Permanent link">&para;</a></h3>
+<p>CAP 讨论的是在发生网络分区（P）时，分布式系统无法同时完全满足：</p>
+<ul>
+<li><strong>Consistency</strong>：强一致</li>
+<li><strong>Availability</strong>：可用性</li>
+</ul>
+<p>因此系统必须做取舍。</p>
+<h3 id="_50">关键点<a class="headerlink" href="#_50" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CAP 不是平时无脑三选二</li>
+<li>它讨论的是<strong>网络分区出现时</strong>系统如何取舍</li>
+<li>现实系统通常会根据业务做不同强度的一致性/可用性设计</li>
+</ul>
+<h3 id="_51">高分点<a class="headerlink" href="#_51" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>CAP 真正重要的不是背字母，而是理解：当节点之间无法可靠通信时，系统不可能既保证每次读都拿到最新值，又保证每个请求都立刻成功。</p>
+</blockquote>
+<hr />
+<h2 id="13">13. 什么是最终一致性？<a class="headerlink" href="#13" title="Permanent link">&para;</a></h2>
+<h3 id="_52">标准回答<a class="headerlink" href="#_52" title="Permanent link">&para;</a></h3>
+<p>最终一致性是指系统允许短时间内不同副本数据不一致，但在没有新更新继续进入的情况下，经过一段时间会收敛到一致状态。</p>
+<h3 id="_53">为什么很多业务能接受它？<a class="headerlink" href="#_53" title="Permanent link">&para;</a></h3>
+<p>因为不是所有场景都要求“瞬时强一致”。
+比如：</p>
+<ul>
+<li>评论数</li>
+<li>点赞数</li>
+<li>推荐结果</li>
+<li>搜索索引同步</li>
+</ul>
+<p>这些场景往往更关心：</p>
+<ul>
+<li>吞吐</li>
+<li>延迟</li>
+<li>可用性</li>
+</ul>
+<p>而不是每一瞬间都完全同步。</p>
+<h3 id="_54">但别答得太轻松<a class="headerlink" href="#_54" title="Permanent link">&para;</a></h3>
+<p>最终一致不是“随便错一会儿都行”，仍然要回答：</p>
+<ul>
+<li>不一致窗口多大</li>
+<li>如何补偿</li>
+<li>是否会影响关键业务</li>
+</ul>
+<h3 id="_55">一句总结<a class="headerlink" href="#_55" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>最终一致不是放弃一致性，而是把一致性的时点从“立刻”放宽成“经过收敛过程后达到一致”。</p>
+</blockquote>
+<hr />
+<h2 id="14">14. 为什么重试会把系统问题放大？<a class="headerlink" href="#14" title="Permanent link">&para;</a></h2>
+<h3 id="_56">标准回答<a class="headerlink" href="#_56" title="Permanent link">&para;</a></h3>
+<p>重试本来是为了提高请求成功率，但在下游已经过载或部分失效时，重试会进一步放大流量和资源压力。</p>
+<h3 id="_57">一个典型链路<a class="headerlink" href="#_57" title="Permanent link">&para;</a></h3>
+<p>下游服务已经很慢：</p>
+<ol>
+<li>上游超时</li>
+<li>上游自动重试</li>
+<li>下游收到更多重复请求</li>
+<li>排队更长，RT 更高</li>
+<li>更多上游超时</li>
+<li>整体雪崩</li>
+</ol>
+<h3 id="_58">所以重试必须带约束<a class="headerlink" href="#_58" title="Permanent link">&para;</a></h3>
+<ul>
+<li>超时控制</li>
+<li>最大重试次数</li>
+<li>指数退避</li>
+<li>幂等保证</li>
+<li>熔断和限流配合</li>
+</ul>
+<h3 id="_59">高分点<a class="headerlink" href="#_59" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>重试不是“保底机制”，而是风险机制。它在故障场景里既可能提高成功率，也可能成为故障放大器。</p>
+</blockquote>
+<hr />
+<h2 id="15">15. 为什么要做限流、熔断、降级和隔离？<a class="headerlink" href="#15" title="Permanent link">&para;</a></h2>
+<h3 id="_60">限流<a class="headerlink" href="#_60" title="Permanent link">&para;</a></h3>
+<p>控制入口流量，避免系统被瞬间打穿。</p>
+<h3 id="_61">熔断<a class="headerlink" href="#_61" title="Permanent link">&para;</a></h3>
+<p>当下游已经明显异常时，暂时阻断对它的调用，避免持续施压。</p>
+<h3 id="_62">降级<a class="headerlink" href="#_62" title="Permanent link">&para;</a></h3>
+<p>在资源不足或依赖异常时，优先保障核心功能，牺牲非核心功能。</p>
+<h3 id="_63">隔离<a class="headerlink" href="#_63" title="Permanent link">&para;</a></h3>
+<p>让不同依赖、不同业务、不同资源池彼此分开，防止相互拖垮。</p>
+<h3 id="_64">为什么它们常被放在一起讲？<a class="headerlink" href="#_64" title="Permanent link">&para;</a></h3>
+<p>因为它们本质上都在做同一件事：</p>
+<blockquote>
+<p>控制故障传播和资源失控。</p>
+</blockquote>
+<h3 id="_65">面试高分点<a class="headerlink" href="#_65" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>限流、熔断、降级、隔离不是几个零散术语，而是一整套“防止局部问题扩散成全局问题”的稳定性体系。</p>
+</blockquote>
+<hr />
+<h2 id="16">16. 什么是容灾？它和高可用有什么区别？<a class="headerlink" href="#16" title="Permanent link">&para;</a></h2>
+<h3 id="_66">标准回答<a class="headerlink" href="#_66" title="Permanent link">&para;</a></h3>
+<p>高可用更强调单服务、单节点、单机房范围内的持续可服务能力；容灾更强调面对更大范围故障（如机房、可用区、地域级故障）时的恢复能力。</p>
+<h3 id="_67">两者关注范围不同<a class="headerlink" href="#_67" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>高可用</strong>：偏局部故障持续服务</li>
+<li><strong>容灾</strong>：偏重大灾难下业务恢复</li>
+</ul>
+<h3 id="_68">常见容灾等级<a class="headerlink" href="#_68" title="Permanent link">&para;</a></h3>
+<ul>
+<li>单机房高可用</li>
+<li>跨机房主备</li>
+<li>同城双活</li>
+<li>异地灾备</li>
+<li>两地三中心</li>
+</ul>
+<h3 id="_69">一句总结<a class="headerlink" href="#_69" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>高可用更像“平时的故障韧性”，容灾更像“极端事故下的生存能力”。</p>
+</blockquote>
+<hr />
+<h2 id="17-rpo-rto">17. RPO 和 RTO 是什么？<a class="headerlink" href="#17-rpo-rto" title="Permanent link">&para;</a></h2>
+<h3 id="rporecovery-point-objective">RPO（Recovery Point Objective）<a class="headerlink" href="#rporecovery-point-objective" title="Permanent link">&para;</a></h3>
+<p>能接受最多丢多少数据。</p>
+<p>比如：</p>
+<ul>
+<li>RPO = 0：理论上不能接受数据丢失</li>
+<li>RPO = 5 分钟：最多接受丢失最近 5 分钟数据</li>
+</ul>
+<h3 id="rtorecovery-time-objective">RTO（Recovery Time Objective）<a class="headerlink" href="#rtorecovery-time-objective" title="Permanent link">&para;</a></h3>
+<p>能接受最多中断多久。</p>
+<p>比如：</p>
+<ul>
+<li>RTO = 30 秒：30 秒内必须恢复</li>
+<li>RTO = 30 分钟：业务可接受更长恢复时间</li>
+</ul>
+<h3 id="_70">为什么这两个指标重要？<a class="headerlink" href="#_70" title="Permanent link">&para;</a></h3>
+<p>因为容灾设计不是空谈“越强越好”，而是必须和业务目标绑定：</p>
+<ul>
+<li>金融交易</li>
+<li>社交消息</li>
+<li>搜索推荐</li>
+<li>日志分析</li>
+</ul>
+<p>不同业务对数据丢失和中断时间容忍度完全不同。</p>
+<h3 id="_71">高分点<a class="headerlink" href="#_71" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>RPO 和 RTO 的价值在于把容灾从技术愿景转成业务约束，不同业务的容灾方案必须由这两个目标反推出来。</p>
+</blockquote>
+<hr />
+<h2 id="18">18. 双活为什么难？<a class="headerlink" href="#18" title="Permanent link">&para;</a></h2>
+<h3 id="_72">标准回答<a class="headerlink" href="#_72" title="Permanent link">&para;</a></h3>
+<p>双活指两个机房 / 区域同时承接业务流量并对外提供服务。它的难点在于要同时处理：</p>
+<ul>
+<li>流量路由</li>
+<li>多地写入</li>
+<li>数据同步延迟</li>
+<li>冲突处理</li>
+<li>故障切换</li>
+</ul>
+<h3 id="_73">为什么不是“部署两套”就行？<a class="headerlink" href="#_73" title="Permanent link">&para;</a></h3>
+<p>因为双活意味着：</p>
+<ul>
+<li>平时两边都在工作</li>
+<li>不只是灾难时备用</li>
+<li>数据必须持续协同</li>
+</ul>
+<p>这会带来：</p>
+<ul>
+<li>写冲突</li>
+<li>一致性窗口</li>
+<li>链路复杂度上升</li>
+<li>运维和排障难度上升</li>
+</ul>
+<h3 id="_74">高分点<a class="headerlink" href="#_74" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>双活最难的从来不是部署两套服务，而是两个地方都活着时，状态怎么协调、写入怎么收敛、故障时怎么不扩大损失。</p>
+</blockquote>
+<hr />
+<h2 id="19">19. 分布式系统如何回答“设计一个高可用架构”？<a class="headerlink" href="#19" title="Permanent link">&para;</a></h2>
+<h3 id="_75">一个稳的答题框架<a class="headerlink" href="#_75" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>先识别单点</strong></li>
+<li>服务单点</li>
+<li>数据库单点</li>
+<li>缓存单点</li>
+<li>注册中心单点</li>
+<li>
+<p>机房单点</p>
+</li>
+<li>
+<p><strong>做冗余</strong></p>
+</li>
+<li>多实例</li>
+<li>多副本</li>
+<li>
+<p>主从 / 主备 / 集群</p>
+</li>
+<li>
+<p><strong>做故障检测与摘除</strong></p>
+</li>
+<li>健康检查</li>
+<li>
+<p>失败实例摘流量</p>
+</li>
+<li>
+<p><strong>做切换能力</strong></p>
+</li>
+<li>故障转移</li>
+<li>流量切换</li>
+<li>
+<p>数据恢复</p>
+</li>
+<li>
+<p><strong>控制故障扩散</strong></p>
+</li>
+<li>限流</li>
+<li>熔断</li>
+<li>隔离</li>
+<li>
+<p>降级</p>
+</li>
+<li>
+<p><strong>补充监控和演练</strong></p>
+</li>
+<li>可观测性</li>
+<li>故障演练</li>
+<li>回滚和预案</li>
+</ol>
+<h3 id="_76">为什么这个框架好用？<a class="headerlink" href="#_76" title="Permanent link">&para;</a></h3>
+<p>因为它不会让回答停留在“上集群、多副本、加个 LB”这种空泛层面，而是能展示：</p>
+<ul>
+<li>你知道高可用是系统工程</li>
+<li>你知道故障发生后要怎么处理</li>
+<li>你知道上线前就应该有监控和预案</li>
+</ul>
+<hr />
+<h2 id="20">20. 一组典型追问链<a class="headerlink" href="#20" title="Permanent link">&para;</a></h2>
+<ol>
+<li>分布式系统和单机系统最本质的差别是什么？</li>
+<li>服务发现解决了什么问题？</li>
+<li>负载均衡有哪些策略，分别适合什么场景？</li>
+<li>四层和七层负载均衡有什么区别？</li>
+<li>高可用为什么不等于强一致？</li>
+<li>主从复制提升了什么，又牺牲了什么？</li>
+<li>故障转移为什么难？</li>
+<li>什么是脑裂？为什么危险？</li>
+<li>CAP 该怎么理解，为什么不是机械三选二？</li>
+<li>最终一致性到底在工程里意味着什么？</li>
+<li>重试为什么可能把系统打死？</li>
+<li>限流、熔断、降级、隔离为什么要成套出现？</li>
+<li>容灾和高可用到底差在哪里？</li>
+<li>RPO / RTO 怎么决定你的容灾方案？</li>
+<li>双活为什么是高难度系统题？</li>
+</ol>
+<hr />
+<h2 id="21">21. 一份更像面试现场的总结回答<a class="headerlink" href="#21" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>分布式系统真正难的不是把服务拆开，而是拆开之后，原来单机内部简单成立的很多前提都消失了：调用变成网络调用，状态变成跨节点状态，故障也从“整体挂了”变成“部分节点失效、部分链路超时”。负载均衡解决的是流量分配和容量利用问题，高可用解决的是局部故障下还能不能服务，容灾解决的是更大范围事故下业务能不能恢复，而一致性问题则始终贯穿其中。真正成熟的回答，应该能把收益、代价、故障模式和工程边界一起讲清楚，而不是只停在“多副本、主从、加个 LB”这些关键词上。</p>
+</blockquote>
+<hr />
+<h2 id="22">22. 复习建议<a class="headerlink" href="#22" title="Permanent link">&para;</a></h2>
+<p>至少做到：</p>
+<ul>
+<li>能讲清分布式系统和单机的本质差异</li>
+<li>能区分服务发现、负载均衡、高可用、容灾各自解决的问题</li>
+<li>能说明高可用为什么不等于高一致性</li>
+<li>能解释重试、限流、熔断、降级、隔离为什么要组合使用</li>
+<li>能理解 RPO / RTO 和双活这些容灾高频概念</li>
+<li>遇到系统设计题时，回答不只停在“多部署几台机器”</li>
+</ul>
+<p>做到这里，这一章就会开始更像真正的基础设施 / 后端系统设计问答，而不是概念速记表。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ZeroJustMe/cpp-interview-notes" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.top", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link", "header.autohide"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../javascripts/extra.js"></script>
+      
+    
+  </body>
+</html>

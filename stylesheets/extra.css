@@ -1,0 +1,108 @@
+/* ===== 阅读进度条 ===== */
+.md-header {
+  position: relative;
+}
+
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, #5c6bc0, #42a5f5);
+  z-index: 9999;
+  transition: width 50ms ease-out;
+}
+
+/* ===== 中文排版优化 ===== */
+.md-typeset {
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.md-typeset h2 {
+  margin-top: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset h3 {
+  margin-top: 1.5em;
+}
+
+/* 代码块优化 */
+.md-typeset pre {
+  border-radius: 8px;
+}
+
+.md-typeset code {
+  font-size: 0.82em;
+  border-radius: 4px;
+}
+
+/* 正文段落间距 */
+.md-typeset p {
+  margin-bottom: 0.8em;
+}
+
+/* 列表间距微调 */
+.md-typeset li {
+  margin-bottom: 0.3em;
+}
+
+/* ===== 移动端优化 ===== */
+@media screen and (max-width: 76.1875em) {
+  .md-typeset {
+    font-size: 0.78rem;
+    line-height: 1.75;
+  }
+
+  .md-typeset h1 {
+    font-size: 1.4em;
+  }
+
+  .md-typeset h2 {
+    font-size: 1.2em;
+  }
+
+  .md-typeset pre {
+    font-size: 0.75rem;
+  }
+}
+
+/* ===== 表格优化 ===== */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 0.78rem;
+}
+
+/* ===== 搜索框中文优化 ===== */
+.md-search__input {
+  font-family: "Noto Sans SC", sans-serif;
+}
+
+/* ===== 导航栏调整 ===== */
+.md-nav__link {
+  font-size: 0.72rem;
+}
+
+/* ===== admonition 微调 ===== */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+/* ===== 难度标记颜色强调 ===== */
+/* 用于仓库中的 ⭐🔥💎 标记 */
+.md-typeset h3:has(+ p > strong:first-child),
+.md-typeset h4:has(+ p > strong:first-child) {
+  margin-bottom: 0.3em;
+}
