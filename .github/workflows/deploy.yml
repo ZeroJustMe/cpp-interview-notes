@@ -32,5 +32,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Setup docs directory
+        run: |
+          ln -s "$(pwd)/cpp_interview_notes" docs/cpp_interview_notes
+          ln -s "$(pwd)/cpp_company_interviews" docs/cpp_company_interviews
+
       - name: Build and deploy
         run: mkdocs gh-deploy --force
