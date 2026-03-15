@@ -1,0 +1,163 @@
+site_name: C++ 面试笔记
+site_url: https://zerojustme.github.io/cpp-interview-notes/
+site_description: 面向 C++/后端/系统方向的面试准备知识库
+repo_url: https://github.com/ZeroJustMe/cpp-interview-notes
+repo_name: ZeroJustMe/cpp-interview-notes
+edit_uri: edit/main/
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: zh
+  font:
+    text: Noto Sans SC
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - header.autohide
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+
+plugins:
+  - search:
+      lang:
+        - zh
+        - en
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ZeroJustMe/cpp-interview-notes
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+nav:
+  - 首页: index.md
+  - C++ 语言:
+    - 知识库概览: cpp_interview_notes/README.md
+    - 对象模型与内存布局: cpp_interview_notes/01_cpp_language/01_object_model.md
+    - 值类别 · 移动语义 · 智能指针: cpp_interview_notes/01_cpp_language/02_value_categories_move_smartptr.md
+    - STL · 模板 · 编译链接: cpp_interview_notes/01_cpp_language/03_stl_template_compile.md
+    - 并发编程: cpp_interview_notes/01_cpp_language/04_cpp_concurrency.md
+    - STL 容器深入: cpp_interview_notes/01_cpp_language/05_stl_containers_deep_dive.md
+    - C++11-20 新特性: cpp_interview_notes/01_cpp_language/06_cpp11_20_features.md
+    - 内存管理与 Allocator: cpp_interview_notes/01_cpp_language/07_memory_management_allocator.md
+    - 模板元编程: cpp_interview_notes/01_cpp_language/08_templates_metaprogramming.md
+  - 操作系统:
+    - 进程 · 线程 · 内存: cpp_interview_notes/02_operating_system/01_process_thread_memory.md
+    - IO 多路复用: cpp_interview_notes/02_operating_system/02_io_multiplexing.md
+    - 文件系统与信号: cpp_interview_notes/02_operating_system/03_linux_filesystem_signals.md
+  - 计算机网络:
+    - 网络基础: cpp_interview_notes/03_computer_network/00_network_fundamentals.md
+    - TCP · UDP · HTTP: cpp_interview_notes/03_computer_network/01_tcp_udp_http.md
+    - HTTP 详解: cpp_interview_notes/03_computer_network/02_http_details.md
+    - RPC · 消息队列 · DNS · CDN: cpp_interview_notes/03_computer_network/03_rpc_message_queue_dns_cdn.md
+    - 网络安全基础: cpp_interview_notes/03_computer_network/04_network_security_basics.md
+  - 数据库与缓存:
+    - SQL 基础: cpp_interview_notes/04_database_cache/00_sql_fundamentals.md
+    - MySQL & Redis: cpp_interview_notes/04_database_cache/01_mysql_redis.md
+    - 事务 · 锁 · 索引: cpp_interview_notes/04_database_cache/02_mysql_transactions_indexes.md
+    - Redis 高可用: cpp_interview_notes/04_database_cache/03_redis_high_availability.md
+    - NoSQL 与 KV 存储: cpp_interview_notes/04_database_cache/04_nosql_kv_storage_principles.md
+  - 设计模式与架构:
+    - 设计模式 · 系统设计: cpp_interview_notes/05_design_patterns_architecture/01_patterns_architecture.md
+    - 项目问答: cpp_interview_notes/05_design_patterns_architecture/02_project_questions.md
+    - 手撕题: cpp_interview_notes/05_design_patterns_architecture/03_hands_on_topics.md
+    - 分布式 · 负载均衡 · 高可用: cpp_interview_notes/05_design_patterns_architecture/04_distributed_systems_load_balancing_high_availability.md
+    - 可观测性 · 云原生: cpp_interview_notes/05_design_patterns_architecture/05_observability_reliability_cloud_native.md
+  - 算法:
+    - 数据结构与算法: cpp_interview_notes/06_algorithms/01_data_structure_algorithm.md
+  - 岗位路径:
+    - 后端 C++ 路径: cpp_interview_notes/07_role_based/01_backend_cpp_path.md
+    - 校招 C++ 路径: cpp_interview_notes/07_role_based/02_campus_cpp_path.md
+    - 岗位要求差距补充: cpp_interview_notes/07_role_based/03_job_requirements_gap_supplement.md
+    - 面试速记: cpp_interview_notes/07_role_based/04_job_requirements_interview_quick_notes.md
+  - 企业场景:
+    - 场景面试题: cpp_interview_notes/08_enterprise_scenarios/01_scenario_questions.md
+  - 公司面经:
+    - 概览: cpp_company_interviews/README.md
+    - 高频知识点: cpp_company_interviews/高频知识点.md
+    - 算法题映射: cpp_company_interviews/算法题映射.md
+    - 来源清单: cpp_company_interviews/sources.md
+    - 腾讯: cpp_company_interviews/companies/腾讯.md
+    - 阿里 / 钉钉: cpp_company_interviews/companies/阿里-钉钉.md
+    - 字节跳动: cpp_company_interviews/companies/字节跳动.md
+    - 百度: cpp_company_interviews/companies/百度.md
+    - 美团: cpp_company_interviews/companies/美团.md
+    - 京东: cpp_company_interviews/companies/京东.md
+    - 华为: cpp_company_interviews/companies/华为.md
+    - 小米: cpp_company_interviews/companies/小米.md

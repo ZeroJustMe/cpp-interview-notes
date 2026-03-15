@@ -3,11 +3,13 @@
 > 这份速记稿不是完整教材，而是给面试前快速过一遍用的。
 >
 > 每个点尽量按下面结构整理：
+>
 > - **一句话回答**：适合先开口
 > - **展开 1 分钟**：适合正常技术面
 > - **高频追问**：面试官继续往下挖时能接住
 >
 > 配套正式章节：
+>
 > - `05_design_patterns_architecture/04_distributed_systems_load_balancing_high_availability.md`
 > - `04_database_cache/04_nosql_kv_storage_principles.md`
 

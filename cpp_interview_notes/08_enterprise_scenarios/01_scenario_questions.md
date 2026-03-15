@@ -22,6 +22,7 @@
 **回答思路：**
 
 **1. 核心功能拆解：**
+
 - 长链接 → 短链接的映射生成
 - 短链接 → 长链接的快速查询和 302 跳转
 - 短链接的唯一性保证
@@ -37,12 +38,14 @@
 | 过期机制 | 记录创建时间 + TTL，定时清理 | 避免无限膨胀 |
 
 **3. 串联知识点：**
+
 - **哈希与冲突**：如果用哈希方案，怎么处理冲突？→ [数据结构与算法](../06_algorithms/01_data_structure_algorithm.md)
 - **数据库索引**：短链接字段需要唯一索引 → [MySQL 索引](../04_database_cache/01_mysql_redis.md)
 - **缓存策略**：热点短链接走 Redis，缓存穿透怎么防？→ [Redis 高可用](../04_database_cache/03_redis_high_availability.md)
 - **HTTP 重定向**：301 vs 302 的区别 → [HTTP 详解](../03_computer_network/02_http_details.md)
 
 **4. 主动补充：**
+
 - 高并发下 ID 生成怎么保证唯一？分布式 ID 方案（Snowflake 等）
 - 防止恶意刷短链接：限流、黑名单
 - 统计需求：点击量、地域分布、时间分布
@@ -56,6 +59,7 @@
 **回答思路：**
 
 **1. 核心模块：**
+
 - **连接管理层**：维护客户端和服务端的长连接（WebSocket / 自定义协议）
 - **路由层**：知道用户当前连接在哪台机器上
 - **消息分发层**：把消息投递到正确的连接
@@ -73,6 +77,7 @@
 | 推送顺序 | 单用户维度有序（用消息序列号），跨用户不保证全局序 |
 
 **3. 串联知识点：**
+
 - **长连接 vs 轮询** → [网络进阶](../03_computer_network/02_http_details.md)
 - **消息队列** → [RPC 与消息队列](../03_computer_network/03_rpc_message_queue_dns_cdn.md)
 - **心跳与保活** → [TCP 基础](../03_computer_network/01_tcp_udp_http.md)
@@ -91,6 +96,7 @@
 | 日志与监控 | 记录执行结果、耗时、失败原因 |
 
 **串联知识点：**
+
 - **分布式锁**：Redis SETNX + 过期时间 → [Redis 高可用](../04_database_cache/03_redis_high_availability.md)
 - **幂等性**：任务重复执行了怎么办？→ [系统设计](../05_design_patterns_architecture/01_patterns_architecture.md)
 - **线程池**：执行器内部怎么管理并发？→ [C++ 并发](../01_cpp_language/04_cpp_concurrency.md)
@@ -109,6 +115,7 @@
 4. **检查基础设施** — 网络抖动？CPU/内存/磁盘 IO 打满？容器资源限制？
 
 **串联知识点：**
+
 - [进程、线程、内存](../02_operating_system/01_process_thread_memory.md) — 上下文切换
 - [IO 多路复用](../02_operating_system/02_io_multiplexing.md) — epoll 是否阻塞
 - [MySQL 事务与索引](../04_database_cache/02_mysql_transactions_indexes.md) — 慢查询和锁等待
@@ -123,6 +130,7 @@
 4. **架构层面** — 读写分离、缓存热点数据、大表水平拆分
 
 **串联知识点：**
+
 - [SQL 基础](../04_database_cache/00_sql_fundamentals.md) — SQL 语句优化
 - [MySQL 索引原理](../04_database_cache/01_mysql_redis.md) — B+ 树、聚簇索引
 - [MySQL 事务与锁](../04_database_cache/02_mysql_transactions_indexes.md) — 锁等待、死锁
@@ -147,6 +155,7 @@
 4. **常见原因：** 死循环、自旋锁竞争、频繁内存分配释放、正则回溯、CPU 密集计算
 
 **串联知识点：**
+
 - [进程与线程](../02_operating_system/01_process_thread_memory.md)
 - [C++ 并发](../01_cpp_language/04_cpp_concurrency.md)
 - [内存管理](../01_cpp_language/07_memory_management_allocator.md)
@@ -160,6 +169,7 @@
 3. **常见原因：** new 没 delete、容器只增不删、缓存没淘汰、shared_ptr 循环引用、文件句柄没关
 
 **串联知识点：**
+
 - [内存管理与分配器](../01_cpp_language/07_memory_management_allocator.md)
 - [智能指针](../01_cpp_language/02_value_categories_move_smartptr.md)
 - [Linux 文件系统与信号](../02_operating_system/03_linux_filesystem_signals.md)
