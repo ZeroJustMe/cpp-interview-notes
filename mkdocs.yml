@@ -107,8 +107,8 @@ extra_javascript:
 
 nav:
   - 首页: index.md
+  - 知识库概览: cpp_interview_notes/README.md
   - C++ 语言:
-    - 知识库概览: cpp_interview_notes/README.md
     - 对象模型与内存布局: cpp_interview_notes/01_cpp_language/01_object_model.md
     - 值类别 · 移动语义 · 智能指针: cpp_interview_notes/01_cpp_language/02_value_categories_move_smartptr.md
     - STL · 模板 · 编译链接: cpp_interview_notes/01_cpp_language/03_stl_template_compile.md
