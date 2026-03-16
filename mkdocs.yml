@@ -147,6 +147,10 @@ nav:
     - 面试速记: cpp_interview_notes/07_role_based/04_job_requirements_interview_quick_notes.md
   - 企业场景:
     - 场景面试题: cpp_interview_notes/08_enterprise_scenarios/01_scenario_questions.md
+  - 简历项目面试:
+    - 项目深挖题: resume_project_interview/01_project_deep_dive_questions.md
+    - 项目出发八股: resume_project_interview/02_project_based_fundamentals.md
+    - 企业场景题: resume_project_interview/03_enterprise_scenarios.md
   - 公司面经:
     - 概览: cpp_company_interviews/README.md
     - 高频知识点: cpp_company_interviews/高频知识点.md
