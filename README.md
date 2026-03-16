@@ -2,6 +2,8 @@
 
 这是一个面向 C++ / 后端 / 系统方向面试准备的知识仓库。
 
+[在线网页](https://zerojustme.github.io/cpp-interview-notes/)
+
 ## 目录
 
 - `cpp_interview_notes/`：主知识库，按语言、操作系统、网络、数据库、架构、算法、岗位路径分专题整理
