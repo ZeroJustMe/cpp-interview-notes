@@ -126,6 +126,8 @@ nav:
     - HTTP 详解: cpp_interview_notes/03_computer_network/02_http_details.md
     - RPC · 消息队列 · DNS · CDN: cpp_interview_notes/03_computer_network/03_rpc_message_queue_dns_cdn.md
     - 网络安全基础: cpp_interview_notes/03_computer_network/04_network_security_basics.md
+    - 网络编程：Socket · epoll · Asio: cpp_interview_notes/03_computer_network/05_network_programming_socket_epoll.md
+    - 网络编程示例篇: cpp_interview_notes/03_computer_network/06_network_programming_examples.md
   - 数据库与缓存:
     - SQL 基础: cpp_interview_notes/04_database_cache/00_sql_fundamentals.md
     - MySQL & Redis: cpp_interview_notes/04_database_cache/01_mysql_redis.md
