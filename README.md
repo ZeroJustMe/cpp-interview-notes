@@ -2,11 +2,11 @@
 
 这是一个面向 C++ / 后端 / 系统方向面试准备的知识仓库。
 
-[在线网页](https://zerojustme.github.io/cpp-interview-notes/)
-[参考页面](https://notes.kamacoder.com/bagu/2JXfrApD66i)
+- [在线网页](https://zerojustme.github.io/cpp-interview-notes/)
 
-[vLLM入门](https://se7en.mintlify.app/talks/01-vllm-quickstart)
-[大模型入门(斯坦福CS336)](https://www.bilibili.com/video/BV13SV9zdEhX)
+## 另外推荐
+- [vLLM入门](https://se7en.mintlify.app/talks/01-vllm-quickstart)
+- [大模型入门(斯坦福CS336)](https://www.bilibili.com/video/BV13SV9zdEhX)
 
 ## 目录
 
