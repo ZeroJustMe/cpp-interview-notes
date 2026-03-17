@@ -80,6 +80,8 @@
 - `02_http_details.md`
 - `03_rpc_message_queue_dns_cdn.md`
 - `04_network_security_basics.md`
+- `05_network_programming_socket_epoll.md`
+- `06_network_programming_examples.md`
 
 #### 04_database_cache
 - `01_mysql_redis.md`
