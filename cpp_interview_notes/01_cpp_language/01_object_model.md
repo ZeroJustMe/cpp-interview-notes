@@ -416,3 +416,131 @@ RTTI（Run-Time Type Information）是运行时类型信息机制，`typeid` 和
 - 能把"语言规则"和"工程代价"联系起来
 
 做到这里，这一章就不是在背八股，而是在讲 C++ 的对象语义。
+
+---
+
+## 附录：对象模型关键概念代码验证
+
+> 下面的代码可以直接编译运行，用于验证对象模型中最常被面试问到的几个现象。
+
+### 代码一：sizeof、对齐、虚函数对对象大小的影响
+
+```cpp
+#include <iostream>
+
+// 空类
+class Empty {};
+
+// 不含虚函数的简单类
+class NoVirtual {
+    int a;
+    char b;
+};
+
+// 含虚函数的类（多了一个 vptr）
+class WithVirtual {
+    int a;
+    char b;
+public:
+    virtual void f() {}
+};
+
+// 成员顺序影响 padding
+class PaddingA { char c; int i; char d; };   // char(1) + pad(3) + int(4) + char(1) + pad(3) = 12
+class PaddingB { int i; char c; char d; };    // int(4) + char(1) + char(1) + pad(2) = 8
+
+int main() {
+    std::cout << "sizeof(Empty)       = " << sizeof(Empty)       << "\n";  // 通常 1
+    std::cout << "sizeof(NoVirtual)   = " << sizeof(NoVirtual)   << "\n";  // 通常 8
+    std::cout << "sizeof(WithVirtual) = " << sizeof(WithVirtual) << "\n";  // 通常 16 (64位: +8 for vptr)
+    std::cout << "sizeof(PaddingA)    = " << sizeof(PaddingA)    << "\n";  // 通常 12
+    std::cout << "sizeof(PaddingB)    = " << sizeof(PaddingB)    << "\n";  // 通常 8
+    std::cout << "sizeof(void*)       = " << sizeof(void*)       << "\n";  // 8 (64位)
+    return 0;
+}
+```
+
+### 代码二：虚函数动态绑定 + 构造/析构期虚调用行为
+
+```cpp
+#include <iostream>
+
+class Base {
+public:
+    Base() {
+        std::cout << "Base ctor, calling f(): ";
+        f();  // 构造期调用虚函数：只会调 Base::f()，不会调派生类版本
+    }
+    virtual ~Base() {
+        std::cout << "Base dtor, calling f(): ";
+        f();  // 析构期同理
+    }
+    virtual void f() { std::cout << "Base::f()\n"; }
+};
+
+class Derived : public Base {
+public:
+    Derived() { std::cout << "Derived ctor\n"; }
+    ~Derived() override { std::cout << "Derived dtor\n"; }
+    void f() override { std::cout << "Derived::f()\n"; }
+};
+
+int main() {
+    std::cout << "=== 动态绑定 ===\n";
+    Base* p = new Derived();
+    p->f();      // 运行时多态，调用 Derived::f()
+    delete p;    // 虚析构保证完整析构链
+
+    std::cout << "\n=== 构造/析构期虚调用 ===\n";
+    Derived d;   // 观察构造和析构期 f() 的绑定行为
+    return 0;
+}
+// 输出说明：
+// 构造 Base 时 f() 调用 Base::f()（此时 Derived 部分尚未构造）
+// 析构 Base 时 f() 调用 Base::f()（此时 Derived 部分已被析构）
+// 这就是为什么"构造/析构期不要依赖多态分派"
+```
+
+### 代码三：多继承下的指针调整
+
+```cpp
+#include <iostream>
+
+class A {
+public:
+    int a = 1;
+    virtual void fa() { std::cout << "A::fa()\n"; }
+};
+
+class B {
+public:
+    int b = 2;
+    virtual void fb() { std::cout << "B::fb()\n"; }
+};
+
+class C : public A, public B {
+public:
+    int c = 3;
+    void fa() override { std::cout << "C::fa()\n"; }
+    void fb() override { std::cout << "C::fb()\n"; }
+};
+
+int main() {
+    C obj;
+    A* pa = &obj;
+    B* pb = &obj;
+
+    std::cout << "C  address: " << &obj << "\n";
+    std::cout << "A* address: " << pa   << "\n";
+    std::cout << "B* address: " << pb   << "\n";
+
+    // 多继承下 B* 通常不等于 C* 的首地址，编译器会做指针调整
+    // 但虚函数调用仍然正确分派到 C 的覆盖版本
+    pa->fa();  // C::fa()
+    pb->fb();  // C::fb()
+
+    std::cout << "sizeof(C) = " << sizeof(C) << "\n";
+    // 通常包含：A 的 vptr + A::a + B 的 vptr + B::b + C::c + padding
+    return 0;
+}
+```

@@ -199,6 +199,340 @@ cv.wait(lk, [] { return ready; });
 
 ---
 
+## 经典多线程同步面试题（代码实战）
+
+> 下面给出几道经典多线程面试题的完整 C++ 实现，涵盖 `mutex`、`condition_variable`、`semaphore`、`atomic` 等同步原语的实际使用。每道题都配有设计思路和关键知识点注释。
+
+### 实战一：生产者-消费者模型（mutex + condition_variable）
+
+这是并发面试最高频的经典题。核心在于：生产者往共享队列里放数据，消费者从队列里取数据，队列满时生产者等待，队列空时消费者等待。
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+
+template <typename T>
+class BoundedQueue {
+public:
+    explicit BoundedQueue(size_t capacity) : capacity_(capacity) {}
+
+    // 生产者调用：往队列放入一个元素
+    void push(const T& item) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        // 队列满时，生产者阻塞等待；注意必须用谓词版 wait 防虚假唤醒
+        not_full_.wait(lock, [this] { return queue_.size() < capacity_; });
+        queue_.push(item);
+        not_empty_.notify_one();  // 通知一个等待中的消费者
+    }
+
+    // 消费者调用：从队列取出一个元素
+    T pop() {
+        std::unique_lock<std::mutex> lock(mtx_);
+        // 队列空时，消费者阻塞等待
+        not_empty_.wait(lock, [this] { return !queue_.empty(); });
+        T item = queue_.front();
+        queue_.pop();
+        not_full_.notify_one();   // 通知一个等待中的生产者
+        return item;
+    }
+
+private:
+    std::mutex mtx_;
+    std::condition_variable not_full_;   // 队列"非满"条件
+    std::condition_variable not_empty_;  // 队列"非空"条件
+    std::queue<T> queue_;
+    size_t capacity_;
+};
+
+int main() {
+    BoundedQueue<int> bq(5);
+
+    // 生产者线程
+    std::thread producer([&bq] {
+        for (int i = 0; i < 20; ++i) {
+            bq.push(i);
+            std::cout << "Produced: " << i << "\n";
+        }
+    });
+
+    // 消费者线程
+    std::thread consumer([&bq] {
+        for (int i = 0; i < 20; ++i) {
+            int val = bq.pop();
+            std::cout << "Consumed: " << val << "\n";
+        }
+    });
+
+    producer.join();
+    consumer.join();
+    return 0;
+}
+```
+
+**知识点拆解：**
+- `unique_lock` 而非 `lock_guard`：因为 `condition_variable::wait` 需要在等待时自动释放锁，被唤醒后重新上锁，`lock_guard` 不支持这种灵活控制
+- 谓词版 `wait`：等价于 `while(!pred) cv.wait(lock);`，自动防御虚假唤醒
+- 两个条件变量分别管理"非满"和"非空"两个条件，职责清晰
+- `notify_one` vs `notify_all`：这里一对一通知效率更高；如果有多消费者竞争，可能需要 `notify_all`
+
+---
+
+### 实战二：交替打印奇偶数（mutex + condition_variable）
+
+两个线程交替打印 1~100，一个打印奇数，一个打印偶数。这道题考察的是条件变量控制线程执行顺序。
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+int main() {
+    std::mutex mtx;
+    std::condition_variable cv;
+    int current = 1;
+    const int limit = 100;
+
+    // 奇数线程
+    std::thread odd_thread([&] {
+        while (true) {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock, [&] { return current > limit || (current % 2 == 1); });
+            if (current > limit) break;
+            std::cout << "Odd  thread: " << current << "\n";
+            ++current;
+            cv.notify_one();
+        }
+    });
+
+    // 偶数线程
+    std::thread even_thread([&] {
+        while (true) {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock, [&] { return current > limit || (current % 2 == 0); });
+            if (current > limit) break;
+            std::cout << "Even thread: " << current << "\n";
+            ++current;
+            cv.notify_one();
+        }
+    });
+
+    odd_thread.join();
+    even_thread.join();
+    return 0;
+}
+```
+
+**关键点：**
+- 两个线程共享 `current`，通过条件变量实现严格交替
+- 谓词检查 `current > limit` 作为退出条件，避免线程死等
+- 每次打印后 `notify_one` 唤醒对方
+
+---
+
+### 实战三：用 C++20 `std::counting_semaphore` 实现同步
+
+C++20 引入了信号量，可以更直接地控制并发访问数量。
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <semaphore>
+#include <vector>
+
+// 限制最多 3 个线程同时访问共享资源
+std::counting_semaphore<3> sem(3);
+
+void worker(int id) {
+    sem.acquire();   // P 操作：信号量减 1，为 0 时阻塞
+    std::cout << "Thread " << id << " entering critical section\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::cout << "Thread " << id << " leaving critical section\n";
+    sem.release();   // V 操作：信号量加 1，唤醒等待线程
+}
+
+int main() {
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 10; ++i) {
+        threads.emplace_back(worker, i);
+    }
+    for (auto& t : threads) t.join();
+    return 0;
+}
+```
+
+**用二值信号量实现交替打印（等价于 mutex 的信号量方式）：**
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <semaphore>
+
+int main() {
+    std::binary_semaphore sem_odd(1);   // 奇数先走
+    std::binary_semaphore sem_even(0);  // 偶数等待
+
+    std::thread t1([&] {
+        for (int i = 1; i <= 99; i += 2) {
+            sem_odd.acquire();
+            std::cout << i << "\n";
+            sem_even.release();
+        }
+    });
+
+    std::thread t2([&] {
+        for (int i = 2; i <= 100; i += 2) {
+            sem_even.acquire();
+            std::cout << i << "\n";
+            sem_odd.release();
+        }
+    });
+
+    t1.join();
+    t2.join();
+    return 0;
+}
+```
+
+**知识点对比：**
+- 信号量不持有锁，acquire/release 可以跨线程调用（和 mutex 不同，mutex 必须同一线程加锁解锁）
+- `binary_semaphore` 等价于初始值为 1 的 `counting_semaphore<1>`
+- 信号量本身不保护临界区，它只控制"谁可以继续执行"
+
+---
+
+### 实战四：多线程安全计数器（mutex vs atomic 对比）
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <vector>
+#include <chrono>
+
+// 版本 1：mutex 保护
+struct MutexCounter {
+    std::mutex mtx;
+    int count = 0;
+    void increment() {
+        std::lock_guard<std::mutex> lock(mtx);
+        ++count;
+    }
+};
+
+// 版本 2：atomic 原子操作
+struct AtomicCounter {
+    std::atomic<int> count{0};
+    void increment() {
+        count.fetch_add(1, std::memory_order_relaxed);
+        // 这里用 relaxed 是因为我们只关心最终计数值的正确性
+        // 不需要和其他内存操作建立先后关系
+    }
+};
+
+template <typename Counter>
+void benchmark(const char* name) {
+    Counter counter;
+    std::vector<std::thread> threads;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 8; ++i) {
+        threads.emplace_back([&counter] {
+            for (int j = 0; j < 1000000; ++j) {
+                counter.increment();
+            }
+        });
+    }
+    for (auto& t : threads) t.join();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << name << ": count=" << counter.count << " time=" << ms << "ms\n";
+}
+
+int main() {
+    benchmark<MutexCounter>("Mutex  ");
+    benchmark<AtomicCounter>("Atomic ");
+    return 0;
+}
+```
+
+**面试要点：**
+- 对于简单计数器类场景，`atomic` 通常性能优于 `mutex`
+- 但 `atomic` 只保护单个变量，不能保护多变量不变式
+- `memory_order_relaxed` 是最弱的内存序，仅保证原子性，适合独立计数器
+- 如果计数器的值需要和其他数据建立先后关系，需要用更强的内存序
+
+---
+
+### 实战五：读写锁（`shared_mutex`）实现读多写少场景
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <shared_mutex>
+#include <vector>
+#include <string>
+
+class ThreadSafeConfig {
+public:
+    std::string read(const std::string& key) const {
+        std::shared_lock<std::shared_mutex> lock(mtx_);  // 读锁，多个读者可并发
+        auto it = data_.find(key);
+        return it != data_.end() ? it->second : "";
+    }
+
+    void write(const std::string& key, const std::string& value) {
+        std::unique_lock<std::shared_mutex> lock(mtx_);  // 写锁，独占
+        data_[key] = value;
+    }
+
+private:
+    mutable std::shared_mutex mtx_;
+    std::unordered_map<std::string, std::string> data_;
+};
+
+int main() {
+    ThreadSafeConfig config;
+    config.write("host", "127.0.0.1");
+
+    std::vector<std::thread> readers;
+    for (int i = 0; i < 5; ++i) {
+        readers.emplace_back([&config, i] {
+            for (int j = 0; j < 100; ++j) {
+                auto val = config.read("host");
+                // 多个读者可同时进入，不会互相阻塞
+            }
+            std::cout << "Reader " << i << " done\n";
+        });
+    }
+
+    std::thread writer([&config] {
+        for (int j = 0; j < 10; ++j) {
+            config.write("host", "192.168.1." + std::to_string(j));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        std::cout << "Writer done\n";
+    });
+
+    for (auto& t : readers) t.join();
+    writer.join();
+    return 0;
+}
+```
+
+**知识点：**
+- `shared_lock` 允许多个线程同时持有读锁
+- `unique_lock` 获取写锁时会等所有读者退出
+- 适合"读多写少"场景，比全用 `mutex` 吞吐量更高
+- 注意：`shared_mutex` 的实现通常比普通 `mutex` 更重，读很少时未必有优势
+
+---
+
 ## 第二部分：围绕高频追问继续展开
 
 ## 7. 什么是虚假唤醒？为什么一定要配谓词？
@@ -378,3 +712,432 @@ happens-before 正是在回答这些问题。
 - 不把 lock-free 神化成默认更快方案
 
 做到这里，这一章就不再只是“并发 API 题”，而会变成真正的并发语义理解题。
+---
+
+## 附录 A：线程池完整实现与知识点详解
+
+> 线程池是并发编程的综合大题，融合了线程管理、任务队列同步、条件变量、RAII 生命周期管理、`std::future` 异步结果获取等知识点。下面给出一个生产级可用的现代 C++ 线程池实现。
+
+### 设计思路
+
+1. **线程复用**：预创建 N 个工作线程，避免频繁创建/销毁线程的系统调用开销
+2. **任务队列**：所有待执行任务放入线程安全队列，工作线程竞争取任务
+3. **条件变量**：任务队列为空时工作线程休眠，新任务到来时唤醒
+4. **优雅关闭**：设置停止标志，通知所有线程退出，等待所有线程完成当前任务
+5. **返回值获取**：通过 `std::packaged_task` + `std::future` 让调用者获取异步执行结果
+
+### 完整实现
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <stdexcept>
+
+class ThreadPool {
+public:
+    // 构造函数：创建指定数量的工作线程
+    explicit ThreadPool(size_t num_threads) : stop_(false) {
+        for (size_t i = 0; i < num_threads; ++i) {
+            workers_.emplace_back([this] { worker_loop(); });
+        }
+    }
+
+    // 提交任务，返回 future 用于获取结果
+    // 模板参数：F 是可调用对象类型，Args 是参数包
+    template <typename F, typename... Args>
+    auto submit(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>> {
+        using return_type = std::invoke_result_t<F, Args...>;
+
+        // 将任务包装成 packaged_task，它能与 future 配对
+        auto task = std::make_shared<std::packaged_task<return_type()>>(
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+        );
+
+        std::future<return_type> result = task->get_future();
+
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            if (stop_) {
+                throw std::runtime_error("submit on stopped ThreadPool");
+            }
+            // 将 packaged_task 包装成 void() 放入任务队列
+            tasks_.emplace([task]() { (*task)(); });
+        }
+
+        cv_.notify_one();  // 唤醒一个空闲工作线程
+        return result;
+    }
+
+    // 析构函数：优雅关闭
+    ~ThreadPool() {
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            stop_ = true;
+        }
+        cv_.notify_all();  // 唤醒所有等待中的工作线程
+        for (auto& worker : workers_) {
+            worker.join();   // 等待所有工作线程完成
+        }
+    }
+
+    // 禁止拷贝和赋值
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+
+private:
+    // 每个工作线程执行的循环
+    void worker_loop() {
+        while (true) {
+            std::function<void()> task;
+            {
+                std::unique_lock<std::mutex> lock(mtx_);
+                // 等待条件：有任务可取 或 线程池需要停止
+                cv_.wait(lock, [this] { return stop_ || !tasks_.empty(); });
+
+                // 如果已停止且没有剩余任务，退出循环
+                if (stop_ && tasks_.empty()) return;
+
+                task = std::move(tasks_.front());
+                tasks_.pop();
+            }
+            task();  // 在锁外执行任务，避免持锁时间过长
+        }
+    }
+
+    std::vector<std::thread> workers_;          // 工作线程集合
+    std::queue<std::function<void()>> tasks_;   // 任务队列
+    std::mutex mtx_;                            // 保护任务队列的互斥量
+    std::condition_variable cv_;                // 通知工作线程的条件变量
+    bool stop_;                                 // 停止标志
+};
+```
+
+### 使用示例
+
+```cpp
+int main() {
+    ThreadPool pool(4);  // 4 个工作线程
+
+    // 提交返回值任务
+    auto f1 = pool.submit([] { return 42; });
+    auto f2 = pool.submit([](int a, int b) { return a + b; }, 10, 20);
+
+    // 提交多个计算任务
+    std::vector<std::future<int>> futures;
+    for (int i = 0; i < 10; ++i) {
+        futures.push_back(pool.submit([i] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            return i * i;
+        }));
+    }
+
+    std::cout << "f1 = " << f1.get() << "\n";    // 42
+    std::cout << "f2 = " << f2.get() << "\n";    // 30
+
+    for (int i = 0; i < 10; ++i) {
+        std::cout << i << "^2 = " << futures[i].get() << "\n";
+    }
+
+    return 0;
+    // pool 析构时自动优雅关闭
+}
+```
+
+### 知识点逐一拆解
+
+| 知识点 | 在线程池中的体现 |
+|--------|-----------------|
+| `std::thread` | 工作线程的创建和生命周期管理 |
+| `std::mutex` + `lock_guard` | 保护任务队列的互斥访问 |
+| `std::condition_variable` | 工作线程在无任务时休眠，有任务时被唤醒 |
+| `std::function<void()>` | 类型擦除：任意可调用对象统一存入队列 |
+| `std::packaged_task` | 包装任务，与 `future` 配对实现异步结果获取 |
+| `std::future` | 调用者通过 `get()` 阻塞等待任务结果 |
+| `std::forward` | `submit` 中完美转发调用者参数 |
+| `std::bind` | 将函数和参数绑定成无参可调用对象 |
+| RAII | 析构函数自动完成线程池关闭和线程回收 |
+| `std::invoke_result_t` | 编译期推导任务返回值类型 |
+
+### 常见面试追问
+
+**Q：为什么 `task` 要用 `shared_ptr` 包装 `packaged_task`？**
+> 因为 `packaged_task` 不可拷贝，而 `std::function` 要求可拷贝。用 `shared_ptr` 包装后，lambda 捕获的是 `shared_ptr`（可拷贝），就能存入 `std::function`。
+
+**Q：为什么任务在锁外执行？**
+> 如果持锁执行任务，其他线程就无法在此期间取新任务，严重降低并发度。锁只保护队列操作，不保护任务执行。
+
+**Q：线程池关闭时如何处理队列中未完成的任务？**
+> 当前实现是"执行完所有已入队任务再退出"（graceful shutdown）。`stop_ && tasks_.empty()` 这个条件保证了即使收到停止信号，工作线程仍会清空队列。
+
+**Q：能不能动态调整线程数？**
+> 当前实现不支持。生产级线程池可能支持动态扩缩，但需要额外的线程管理逻辑和同步控制。
+
+---
+
+## 附录 B：Ring Buffer 消息队列——生产者消费者模型实现
+
+> Ring Buffer（环形缓冲区）是高性能消息队列的经典底层结构。它预分配固定大小的数组，用头尾指针循环利用空间，避免动态分配。下面分别给出**有锁版**和**无锁版**两种实现。
+
+### 设计思路
+
+1. 预分配固定容量的数组（capacity 建议为 2 的幂，方便位运算取模）
+2. 维护 `head`（读位置）和 `tail`（写位置）两个索引
+3. 队列满：`(tail + 1) % capacity == head`
+4. 队列空：`tail == head`
+5. 环形复用：索引对 capacity 取模实现循环
+
+### 有锁版：mutex + condition_variable
+
+```cpp
+#include <vector>
+#include <mutex>
+#include <condition_variable>
+#include <optional>
+#include <cstddef>
+
+template <typename T>
+class RingBuffer {
+public:
+    explicit RingBuffer(size_t capacity)
+        : buffer_(capacity), capacity_(capacity), head_(0), tail_(0), count_(0) {}
+
+    // 阻塞式写入
+    void push(const T& item) {
+        std::unique_lock<std::mutex> lock(mtx_);
+        not_full_.wait(lock, [this] { return count_ < capacity_; });
+        buffer_[tail_] = item;
+        tail_ = (tail_ + 1) % capacity_;
+        ++count_;
+        not_empty_.notify_one();
+    }
+
+    // 阻塞式读取
+    T pop() {
+        std::unique_lock<std::mutex> lock(mtx_);
+        not_empty_.wait(lock, [this] { return count_ > 0; });
+        T item = std::move(buffer_[head_]);
+        head_ = (head_ + 1) % capacity_;
+        --count_;
+        not_full_.notify_one();
+        return item;
+    }
+
+    // 非阻塞尝试写入
+    bool try_push(const T& item) {
+        std::lock_guard<std::mutex> lock(mtx_);
+        if (count_ >= capacity_) return false;
+        buffer_[tail_] = item;
+        tail_ = (tail_ + 1) % capacity_;
+        ++count_;
+        not_empty_.notify_one();
+        return true;
+    }
+
+    // 非阻塞尝试读取
+    std::optional<T> try_pop() {
+        std::lock_guard<std::mutex> lock(mtx_);
+        if (count_ == 0) return std::nullopt;
+        T item = std::move(buffer_[head_]);
+        head_ = (head_ + 1) % capacity_;
+        --count_;
+        not_full_.notify_one();
+        return item;
+    }
+
+    size_t size() const {
+        std::lock_guard<std::mutex> lock(mtx_);
+        return count_;
+    }
+
+private:
+    std::vector<T> buffer_;
+    size_t capacity_;
+    size_t head_;    // 消费者读取位置
+    size_t tail_;    // 生产者写入位置
+    size_t count_;   // 当前元素数量
+
+    mutable std::mutex mtx_;
+    std::condition_variable not_full_;
+    std::condition_variable not_empty_;
+};
+```
+
+**使用示例：**
+
+```cpp
+#include <iostream>
+#include <thread>
+
+int main() {
+    RingBuffer<int> rb(8);
+
+    std::thread producer([&rb] {
+        for (int i = 0; i < 100; ++i) {
+            rb.push(i);
+        }
+    });
+
+    std::thread consumer([&rb] {
+        for (int i = 0; i < 100; ++i) {
+            int val = rb.pop();
+            std::cout << val << " ";
+        }
+        std::cout << "\n";
+    });
+
+    producer.join();
+    consumer.join();
+    return 0;
+}
+```
+
+### 无锁版设计思路（单生产者-单消费者 SPSC）
+
+> 无锁 Ring Buffer 的核心洞察：当**只有一个生产者和一个消费者**时，`head` 只被消费者修改，`tail` 只被生产者修改，天然不存在同一变量的写写竞争。因此只需要 `atomic` 保证可见性，不需要 `mutex`。
+
+**关键设计要点：**
+
+1. `head_` 和 `tail_` 用 `std::atomic<size_t>` 存储
+2. 容量必须是 2 的幂，用位与运算 `& (capacity - 1)` 代替取模（更快）
+3. 生产者写入时只更新 `tail_`，消费者读取时只更新 `head_`
+4. 通过 `memory_order_acquire` / `memory_order_release` 建立同步边，保证数据写入对消费者可见
+
+```cpp
+#include <atomic>
+#include <vector>
+#include <optional>
+#include <cstddef>
+#include <cassert>
+
+template <typename T>
+class SPSCRingBuffer {
+public:
+    explicit SPSCRingBuffer(size_t capacity)
+        : capacity_(next_power_of_2(capacity)),
+          mask_(capacity_ - 1),
+          buffer_(capacity_),
+          head_(0),
+          tail_(0) {}
+
+    // 生产者调用（只有一个线程调用）
+    bool try_push(const T& item) {
+        const size_t tail = tail_.load(std::memory_order_relaxed);
+        const size_t next_tail = (tail + 1) & mask_;
+
+        // 队列满：下一个写位置追上了读位置
+        if (next_tail == head_.load(std::memory_order_acquire)) {
+            return false;
+        }
+
+        buffer_[tail] = item;
+
+        // release 语义：保证 buffer_[tail] 的写入在 tail_ 更新之前完成
+        // 这样消费者看到新的 tail_ 时，一定能看到完整的数据
+        tail_.store(next_tail, std::memory_order_release);
+        return true;
+    }
+
+    // 消费者调用（只有一个线程调用）
+    std::optional<T> try_pop() {
+        const size_t head = head_.load(std::memory_order_relaxed);
+
+        // 队列空：读位置等于写位置
+        if (head == tail_.load(std::memory_order_acquire)) {
+            return std::nullopt;
+        }
+
+        T item = std::move(buffer_[head]);
+
+        // release 语义：保证数据读取完成后才更新 head_
+        // 这样生产者看到新的 head_ 时，旧槽位一定已被读完
+        head_.store((head + 1) & mask_, std::memory_order_release);
+        return item;
+    }
+
+    size_t capacity() const { return capacity_; }
+
+private:
+    static size_t next_power_of_2(size_t n) {
+        size_t p = 1;
+        while (p < n) p <<= 1;
+        return p;
+    }
+
+    const size_t capacity_;
+    const size_t mask_;
+    std::vector<T> buffer_;
+
+    // 通过 alignas(64) 避免 false sharing（缓存行伪共享）
+    // head_ 和 tail_ 分别被不同线程频繁访问，应避免在同一缓存行
+    alignas(64) std::atomic<size_t> head_;
+    alignas(64) std::atomic<size_t> tail_;
+};
+```
+
+**使用示例：**
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+int main() {
+    SPSCRingBuffer<int> rb(1024);
+
+    std::thread producer([&rb] {
+        for (int i = 0; i < 1000000; ++i) {
+            while (!rb.try_push(i)) {
+                // 自旋等待；生产级可加 yield 或退避策略
+                std::this_thread::yield();
+            }
+        }
+    });
+
+    std::thread consumer([&rb] {
+        for (int i = 0; i < 1000000; ++i) {
+            while (true) {
+                auto val = rb.try_pop();
+                if (val.has_value()) {
+                    // 验证顺序正确性
+                    if (*val != i) {
+                        std::cerr << "Order error!\n";
+                        return;
+                    }
+                    break;
+                }
+                std::this_thread::yield();
+            }
+        }
+        std::cout << "All 1000000 items consumed correctly.\n";
+    });
+
+    producer.join();
+    consumer.join();
+    return 0;
+}
+```
+
+### 有锁 vs 无锁对比总结
+
+| 维度 | 有锁版（mutex + cv） | 无锁版（SPSC atomic） |
+|------|----------------------|----------------------|
+| 适用场景 | 多生产者-多消费者（MPMC） | 仅单生产者-单消费者（SPSC） |
+| 同步机制 | `mutex` + `condition_variable` | `atomic` + `memory_order` |
+| 阻塞行为 | 可阻塞等待 | 非阻塞（需调用者自旋或退避） |
+| 性能 | 中等，锁竞争是瓶颈 | 极高吞吐，几乎无同步开销 |
+| 实现复杂度 | 低 | 中等（需理解内存序） |
+| 缓存友好 | 一般 | 好（`alignas(64)` 避免 false sharing） |
+| 扩展到 MPMC | 天然支持 | 需要更复杂的设计（如 Disruptor 模式） |
+
+### 无锁版核心知识点
+
+- **`memory_order_acquire/release`**：建立 happens-before 关系，保证"先写数据，再更新索引"对消费者可见
+- **位与取模**：`(idx + 1) & mask_` 比 `% capacity_` 快，但要求容量为 2 的幂
+- **False sharing 防护**：`head_` 和 `tail_` 分属不同线程热路径，`alignas(64)` 确保它们不在同一缓存行
+- **SPSC 限制**：无锁的简洁性来自"每个索引只有一个写者"的约束；MPMC 无锁队列（如 Michael-Scott queue）复杂度高得多

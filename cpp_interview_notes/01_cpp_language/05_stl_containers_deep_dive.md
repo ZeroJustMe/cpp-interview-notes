@@ -328,3 +328,114 @@
 - 能把容器题和迭代器失效、扩容、rehash 串起来
 
 做到这里，容器题就会从“STL 语法题”变成真正的性能与数据结构理解题。
+---
+
+## 附录：容器关键行为代码验证
+
+### 代码一：vector 扩容行为与迭代器失效
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> v;
+    v.reserve(4);  // 预分配 4 个位置
+
+    for (int i = 0; i < 4; ++i) v.push_back(i);
+
+    int* ptr = &v[0];
+    auto it = v.begin();
+    std::cout << "Before expansion: capacity=" << v.capacity()
+              << " data_addr=" << ptr << "\n";
+
+    v.push_back(4);  // 超过 capacity，触发扩容
+
+    std::cout << "After expansion:  capacity=" << v.capacity()
+              << " data_addr=" << &v[0] << "\n";
+
+    // ptr 和 it 现在都是悬空的！扩容后所有迭代器、指针、引用都失效
+    // 使用它们是未定义行为
+    std::cout << "Old ptr still valid? Address changed: " << (ptr != &v[0]) << "\n";
+    return 0;
+}
+// 关键结论：
+// - push_back 触发扩容时，vector 会分配新内存、移动所有元素、释放旧内存
+// - 所有指向旧内存的迭代器/指针/引用全部失效
+// - reserve() 可以避免中途扩容，但一旦超出就仍会失效
+```
+
+### 代码二：map vs unordered_map 查找与迭代器稳定性
+
+```cpp
+#include <iostream>
+#include <map>
+#include <unordered_map>
+#include <string>
+
+int main() {
+    // map: 有序（红黑树），迭代器在插入/删除其他元素后仍然稳定
+    std::map<int, std::string> m = {{3, "c"}, {1, "a"}, {2, "b"}};
+    auto it_map = m.find(2);
+
+    m[4] = "d";  // 插入新元素
+    m.erase(1);  // 删除不相关的元素
+
+    // it_map 仍然有效（指向 key=2 的节点没变）
+    std::cout << "map: it->second = " << it_map->second << "\n";
+
+    std::cout << "map ordered iteration: ";
+    for (auto& [k, v] : m) std::cout << k << ":" << v << " ";
+    std::cout << "\n";
+
+    // unordered_map: 无序（哈希表），rehash 时所有迭代器失效
+    std::unordered_map<int, std::string> um = {{3, "c"}, {1, "a"}, {2, "b"}};
+    std::cout << "unordered_map bucket_count=" << um.bucket_count()
+              << " load_factor=" << um.load_factor() << "\n";
+
+    // 大量插入可能触发 rehash
+    for (int i = 10; i < 100; ++i) um[i] = "x";
+    std::cout << "After inserts: bucket_count=" << um.bucket_count() << "\n";
+    // rehash 后旧迭代器全部失效
+
+    return 0;
+}
+```
+
+### 代码三：erase 时的迭代器安全写法
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <map>
+
+int main() {
+    // vector: erase 返回下一个有效迭代器
+    std::vector<int> v = {1, 2, 3, 4, 5, 6};
+    for (auto it = v.begin(); it != v.end(); ) {
+        if (*it % 2 == 0)
+            it = v.erase(it);  // 必须用返回值更新 it
+        else
+            ++it;
+    }
+    std::cout << "vector after erase evens: ";
+    for (int x : v) std::cout << x << " ";
+    std::cout << "\n";
+
+    // map: erase 后 it 失效，但其他迭代器不受影响
+    std::map<int, int> m = {{1,1},{2,2},{3,3},{4,4}};
+    for (auto it = m.begin(); it != m.end(); ) {
+        if (it->first % 2 == 0)
+            it = m.erase(it);
+        else
+            ++it;
+    }
+    std::cout << "map after erase evens: ";
+    for (auto& [k,v] : m) std::cout << k << " ";
+    std::cout << "\n";
+
+    return 0;
+}
+// 要点：遍历中删除元素时，永远用 erase 的返回值更新迭代器
+// 这是面试最常见的"迭代器失效"考点
+```

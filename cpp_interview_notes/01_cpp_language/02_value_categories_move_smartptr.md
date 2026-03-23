@@ -366,6 +366,371 @@ void wrapper(T&& arg) {
 
 ---
 
+## 附录 A：`unique_ptr` 底层实现（非线程安全版 + 线程安全版）
+
+> 面试中经常被要求"手写一个简易 `unique_ptr`"。核心在于理解独占所有权、移动语义、RAII 自动析构。
+
+### 非线程安全版（标准面试答案）
+
+```cpp
+#include <utility>   // std::exchange
+#include <cstddef>   // std::nullptr_t
+
+template <typename T>
+class UniquePtr {
+public:
+    // 构造：获取资源的唯一所有权
+    explicit UniquePtr(T* ptr = nullptr) noexcept : ptr_(ptr) {}
+
+    // 析构：RAII 自动释放
+    ~UniquePtr() { delete ptr_; }
+
+    // 禁止拷贝：独占所有权核心约束
+    UniquePtr(const UniquePtr&) = delete;
+    UniquePtr& operator=(const UniquePtr&) = delete;
+
+    // 移动构造：资源转移，源对象置空
+    UniquePtr(UniquePtr&& other) noexcept : ptr_(other.ptr_) {
+        other.ptr_ = nullptr;
+    }
+
+    // 移动赋值：先释放自身资源，再接管对方资源
+    UniquePtr& operator=(UniquePtr&& other) noexcept {
+        if (this != &other) {
+            delete ptr_;
+            ptr_ = other.ptr_;
+            other.ptr_ = nullptr;
+        }
+        return *this;
+    }
+
+    // 支持赋值 nullptr
+    UniquePtr& operator=(std::nullptr_t) noexcept {
+        reset();
+        return *this;
+    }
+
+    // 解引用操作
+    T& operator*() const noexcept { return *ptr_; }
+    T* operator->() const noexcept { return ptr_; }
+
+    // 获取裸指针（不转移所有权）
+    T* get() const noexcept { return ptr_; }
+
+    // 布尔转换：if (ptr) 风格检查
+    explicit operator bool() const noexcept { return ptr_ != nullptr; }
+
+    // 释放所有权，返回裸指针（调用者负责 delete）
+    T* release() noexcept {
+        T* tmp = ptr_;
+        ptr_ = nullptr;
+        return tmp;
+    }
+
+    // 重置：释放当前资源，可选接管新资源
+    void reset(T* ptr = nullptr) noexcept {
+        T* old = ptr_;
+        ptr_ = ptr;
+        delete old;
+    }
+
+private:
+    T* ptr_;
+};
+```
+
+**知识点总结：**
+- **拷贝删除**：`= delete` 在编译期阻止拷贝，是独占语义的根本保证
+- **移动语义**：移动后源对象为 `nullptr`，保持"有效但不持有资源"的状态
+- **自赋值检查**：移动赋值中 `this != &other` 防止自我赋值导致资源丢失
+- **`reset` 先保存旧指针再赋新值**：避免 `delete ptr_; ptr_ = ptr;` 中如果 `ptr == ptr_` 导致的 use-after-free
+
+### 线程安全版（atomic 保护）
+
+> 标准库的 `unique_ptr` 本身不是线程安全的。如果需要多线程环境下安全地转移/重置 `unique_ptr`，需要额外同步。以下是一个简易的线程安全包装思路：
+
+```cpp
+#include <mutex>
+#include <utility>
+
+template <typename T>
+class ThreadSafeUniquePtr {
+public:
+    explicit ThreadSafeUniquePtr(T* ptr = nullptr) noexcept : ptr_(ptr) {}
+
+    ~ThreadSafeUniquePtr() { delete ptr_; }
+
+    ThreadSafeUniquePtr(const ThreadSafeUniquePtr&) = delete;
+    ThreadSafeUniquePtr& operator=(const ThreadSafeUniquePtr&) = delete;
+
+    // 线程安全的移动构造
+    ThreadSafeUniquePtr(ThreadSafeUniquePtr&& other) noexcept {
+        std::lock_guard<std::mutex> lock(other.mtx_);
+        ptr_ = other.ptr_;
+        other.ptr_ = nullptr;
+    }
+
+    // 线程安全的移动赋值
+    ThreadSafeUniquePtr& operator=(ThreadSafeUniquePtr&& other) noexcept {
+        if (this != &other) {
+            // 按地址顺序加锁，避免死锁
+            std::mutex* first = &mtx_;
+            std::mutex* second = &other.mtx_;
+            if (first > second) std::swap(first, second);
+            std::lock_guard<std::mutex> lock1(*first);
+            std::lock_guard<std::mutex> lock2(*second);
+
+            delete ptr_;
+            ptr_ = other.ptr_;
+            other.ptr_ = nullptr;
+        }
+        return *this;
+    }
+
+    T* get() const noexcept {
+        std::lock_guard<std::mutex> lock(mtx_);
+        return ptr_;
+    }
+
+    void reset(T* ptr = nullptr) noexcept {
+        std::lock_guard<std::mutex> lock(mtx_);
+        delete ptr_;
+        ptr_ = ptr;
+    }
+
+    T* release() noexcept {
+        std::lock_guard<std::mutex> lock(mtx_);
+        T* tmp = ptr_;
+        ptr_ = nullptr;
+        return tmp;
+    }
+
+private:
+    T* ptr_ = nullptr;
+    mutable std::mutex mtx_;
+};
+```
+
+**面试要点：**
+- 标准 `unique_ptr` **不需要**线程安全，因为独占语义意味着同一时刻只有一个所有者
+- 如果真有多线程竞争访问同一个 `unique_ptr`（设计上应避免），需要外部加锁
+- 线程安全版的移动赋值需要**按固定顺序加两把锁**，防止死锁
+
+---
+
+## 附录 B：`shared_ptr` 底层实现（非线程安全版 + 线程安全版）
+
+> `shared_ptr` 是面试深水区。核心在于控制块（引用计数）的管理方式。
+
+### 非线程安全版
+
+```cpp
+#include <cstddef>
+#include <utility>
+
+// 控制块：存储引用计数
+struct ControlBlock {
+    size_t strong_count = 1;
+    size_t weak_count = 0;   // 简化版暂不实现 weak_ptr
+};
+
+template <typename T>
+class SharedPtr {
+public:
+    // 构造：创建控制块，强引用计数初始化为 1
+    explicit SharedPtr(T* ptr = nullptr)
+        : ptr_(ptr), cb_(ptr ? new ControlBlock() : nullptr) {}
+
+    // 拷贝构造：共享所有权，强引用计数 +1
+    SharedPtr(const SharedPtr& other) noexcept
+        : ptr_(other.ptr_), cb_(other.cb_) {
+        if (cb_) {
+            ++cb_->strong_count;
+        }
+    }
+
+    // 拷贝赋值：先增后减，防止自赋值问题
+    SharedPtr& operator=(const SharedPtr& other) noexcept {
+        if (this != &other) {
+            release();                  // 先减少自身的引用
+            ptr_ = other.ptr_;
+            cb_ = other.cb_;
+            if (cb_) {
+                ++cb_->strong_count;    // 再增加新目标的引用
+            }
+        }
+        return *this;
+    }
+
+    // 移动构造：直接接管，不修改引用计数
+    SharedPtr(SharedPtr&& other) noexcept
+        : ptr_(other.ptr_), cb_(other.cb_) {
+        other.ptr_ = nullptr;
+        other.cb_ = nullptr;
+    }
+
+    // 移动赋值
+    SharedPtr& operator=(SharedPtr&& other) noexcept {
+        if (this != &other) {
+            release();
+            ptr_ = other.ptr_;
+            cb_ = other.cb_;
+            other.ptr_ = nullptr;
+            other.cb_ = nullptr;
+        }
+        return *this;
+    }
+
+    ~SharedPtr() { release(); }
+
+    T& operator*() const noexcept { return *ptr_; }
+    T* operator->() const noexcept { return ptr_; }
+    T* get() const noexcept { return ptr_; }
+    explicit operator bool() const noexcept { return ptr_ != nullptr; }
+
+    size_t use_count() const noexcept {
+        return cb_ ? cb_->strong_count : 0;
+    }
+
+private:
+    void release() {
+        if (cb_) {
+            --cb_->strong_count;
+            if (cb_->strong_count == 0) {
+                delete ptr_;             // 强引用归零，销毁对象
+                if (cb_->weak_count == 0) {
+                    delete cb_;          // 无弱引用时，销毁控制块
+                }
+                // 如果还有 weak_ptr 持有控制块，控制块暂不销毁
+            }
+        }
+        ptr_ = nullptr;
+        cb_ = nullptr;
+    }
+
+    T* ptr_ = nullptr;
+    ControlBlock* cb_ = nullptr;
+};
+```
+
+**关键设计点：**
+- **控制块独立于对象本体**：控制块的生命周期可能比对象更长（有 `weak_ptr` 时）
+- **拷贝 = 共享所有权**：每拷贝一次，`strong_count` +1
+- **移动 = 转移所有权**：不改变计数，源对象置空
+- **析构时检查计数**：计数归零才真正 `delete` 对象
+
+### 线程安全版（atomic 引用计数）
+
+> 标准库的 `shared_ptr` 引用计数操作是线程安全的（使用 `atomic`），但通过 `shared_ptr` 访问所指向的对象本身不自动线程安全。
+
+```cpp
+#include <atomic>
+#include <cstddef>
+#include <utility>
+
+struct AtomicControlBlock {
+    std::atomic<size_t> strong_count{1};
+    std::atomic<size_t> weak_count{0};
+};
+
+template <typename T>
+class AtomicSharedPtr {
+public:
+    explicit AtomicSharedPtr(T* ptr = nullptr)
+        : ptr_(ptr), cb_(ptr ? new AtomicControlBlock() : nullptr) {}
+
+    // 拷贝构造：原子地增加引用计数
+    AtomicSharedPtr(const AtomicSharedPtr& other) noexcept
+        : ptr_(other.ptr_), cb_(other.cb_) {
+        if (cb_) {
+            // fetch_add 是原子操作，多线程同时拷贝同一个 shared_ptr 是安全的
+            cb_->strong_count.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
+
+    AtomicSharedPtr& operator=(const AtomicSharedPtr& other) noexcept {
+        if (this != &other) {
+            release();
+            ptr_ = other.ptr_;
+            cb_ = other.cb_;
+            if (cb_) {
+                cb_->strong_count.fetch_add(1, std::memory_order_relaxed);
+            }
+        }
+        return *this;
+    }
+
+    AtomicSharedPtr(AtomicSharedPtr&& other) noexcept
+        : ptr_(other.ptr_), cb_(other.cb_) {
+        other.ptr_ = nullptr;
+        other.cb_ = nullptr;
+    }
+
+    AtomicSharedPtr& operator=(AtomicSharedPtr&& other) noexcept {
+        if (this != &other) {
+            release();
+            ptr_ = other.ptr_;
+            cb_ = other.cb_;
+            other.ptr_ = nullptr;
+            other.cb_ = nullptr;
+        }
+        return *this;
+    }
+
+    ~AtomicSharedPtr() { release(); }
+
+    T& operator*() const noexcept { return *ptr_; }
+    T* operator->() const noexcept { return ptr_; }
+    T* get() const noexcept { return ptr_; }
+    explicit operator bool() const noexcept { return ptr_ != nullptr; }
+
+    size_t use_count() const noexcept {
+        return cb_ ? cb_->strong_count.load(std::memory_order_relaxed) : 0;
+    }
+
+private:
+    void release() {
+        if (cb_) {
+            // fetch_sub 返回修改前的值
+            // 使用 acq_rel：
+            //   release 保证之前的写操作（特别是对 *ptr_ 的操作）对其他线程可见
+            //   acquire 保证后续的 delete 看到完整的对象状态
+            if (cb_->strong_count.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+                delete ptr_;
+                if (cb_->weak_count.load(std::memory_order_acquire) == 0) {
+                    delete cb_;
+                }
+            }
+        }
+        ptr_ = nullptr;
+        cb_ = nullptr;
+    }
+
+    T* ptr_ = nullptr;
+    AtomicControlBlock* cb_ = nullptr;
+};
+```
+
+**线程安全版知识点拆解：**
+
+| 操作 | 线程安全性 | 原因 |
+|------|-----------|------|
+| 引用计数增减 | 安全（atomic） | `fetch_add` / `fetch_sub` 是原子读改写操作 |
+| 拷贝 `shared_ptr` | 安全 | 计数增加是原子的 |
+| 指向同一对象的多个 `shared_ptr` 同时析构 | 安全 | 只有计数减到 0 的那个线程执行 `delete` |
+| 通过 `shared_ptr` 读写所指对象 | **不安全** | 需要用户自行加锁 |
+| 多线程同时修改同一个 `shared_ptr` 实例 | **不安全** | 需要 `std::atomic<shared_ptr>` (C++20) 或外部加锁 |
+
+**面试高频追问：**
+
+**Q：为什么增加计数用 `relaxed`，减少计数用 `acq_rel`？**
+> 增加计数时，我们只需要保证计数本身的原子性，不需要和其他内存操作建立先后关系。但减少计数时，如果减到 0 要 `delete` 对象，必须保证**之前所有线程对对象的操作**都对当前线程可见（acquire），并且当前线程的"计数减到 0"这个事实对其他线程可见（release）。
+
+**Q：`shared_ptr` 是线程安全的吗？**
+> 半安全。引用计数维护是线程安全的，但 `shared_ptr` 对象本身（作为一个包含指针+控制块指针的结构体）的读写不是原子的。多线程同时**读**同一个 `shared_ptr` 实例是安全的，但同时读写就需要额外保护。
+
+---
+
 ## 17. 一组典型追问链
 
 1. 指针和引用的语义区别是什么？
@@ -378,6 +743,8 @@ void wrapper(T&& arg) {
 8. 完美转发到底在保留什么？
 9. `unique_ptr`、`shared_ptr`、`weak_ptr` 怎么分工？
 10. `shared_ptr` 为什么会重？循环引用怎么解？
+11. 手写 `unique_ptr`：移动语义、拷贝删除、RAII
+12. 手写 `shared_ptr`：控制块设计、引用计数、线程安全
 
 ---
 
